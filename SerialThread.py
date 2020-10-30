@@ -37,6 +37,7 @@ class SerialThread:
 
     # 在主线程中，开启2个子线程作为串口接收、发送
     def start(self, port, baudrate=115200, bytesize=8, stopbits=1, parity='N', timeout=0):
+
         self.my_serial.port = port       # 串口号
         self.my_serial.baudrate = baudrate   # 波特率
         self.my_serial.bytesize = bytesize   # 数据位
@@ -51,10 +52,12 @@ class SerialThread:
         if self.my_serial.isOpen():
             # self.waitEnd = threading.Event() # 事件标志位，2个子线程公用一个
             self.alive = True
+
             self.thread_read = threading.Thread(target=self.reader)
             self.thread_read.setDaemon(True)        # setDaemon(True)，则为守护进程
             self.thread_send = threading.Thread(target=self.sender)
             self.thread_send.setDaemon(True)        # setDaemon(True)，则为守护进程
+
             self.thread_read.start()
             self.thread_send.start()
             return True
@@ -62,6 +65,7 @@ class SerialThread:
             return False
     def reader(self):
         while self.alive:
+
             self.data_num = self.my_serial.inWaiting()
             time.sleep(0.1)                         # 睡眠0.1秒
             try:
@@ -90,6 +94,7 @@ class SerialThread:
                     self.send_flag = False
                 except Exception as ex:
                     print(ex)
+
 
         # self.waitEnd.set() # 线程结束
         # self.alive = False
