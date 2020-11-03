@@ -382,8 +382,8 @@ class myAutoPrintAppication(QWidget, Ui_Form):
             # 序列长度
             self.logInfoPrint("NumberOfSerializedLabels：" + str(self.btFormat.PrintSetup.NumberOfSerializedLabels))
 
-        except Exception as e:
-            self.logInfoPrint(str(e))
+        except Exception as ex:
+            self.logInfoPrint(str(ex))
 
     # 打印设置
     def configPrintSetup(self):
