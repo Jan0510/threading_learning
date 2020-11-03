@@ -43,7 +43,6 @@ class MyUi(QWidget, Ui_Form):
             self.PrintersList.clear()
             for printer in printers:
                 self.PrintersList.addItem(printer, None)
-
     def scan_btwfile_list_slot(self):
         btwdir_path = folder_path + "\\btw\\"
         file_list = os.listdir(btwdir_path)
@@ -54,19 +53,19 @@ class MyUi(QWidget, Ui_Form):
                 if file[-4] == "." and file[-3] == "b" and file[-2] == "t" and file[-1] == "w":
                     # 填充文件列表
                     self.FormatFileList.addItem(file, None)
-
     def change_current_btwfile_slot(self):
-        # 修改文件变量
+        # 1.修改当前btw文件名变量
         self.usingLabelFormatFile = self.FormatFileList.currentText()
-        # 显示文件预览
+        # 2.防止当前btw文件名为空
         if self.usingLabelFormatFile:
-            self.openLableFormatDoc()
-        self.current_btwfile = self.FormatFileList.currentText()
-        if self.oldbtwfile != self.current_btwfile:
-
-        reply = QMessageBox.question(self, '标签文件', "对标签文件是否要保存修改？", QMessageBox.Yes | QMessageBox.No,
+            # 3.关闭保存旧文件，防止旧文件名为空
+            if self.oldbtwfile:
+                if self.oldbtwfile != self.usingLabelFormatFile:
+                    reply = QMessageBox.question(self, '标签文件', "对标签文件是否要保存修改？", QMessageBox.Yes | QMessageBox.No,
                                      QMessageBox.No)
-        self.bartender.set_btwfile_using(current_btwfile, reply)
+                    self.bartender.set_btwfile_using(self.usingLabelFormatFile, reply)
+            # 4.同步更新旧文件变量
+            self.oldbtwfile = self.usingLabelFormatFile
     def scan_port_list_slot(self):   # 扫描串口并刷新列表
         port_dict = self.my_serial.scan()
         if len(port_dict):
