@@ -9,6 +9,8 @@
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 
+from Mycombobox import MyComboBox
+
 
 class Ui_Form(object):
     def setupUi(self, Form):
@@ -28,7 +30,7 @@ class Ui_Form(object):
         self.label_2 = QtWidgets.QLabel(self.groupBox)
         self.label_2.setGeometry(QtCore.QRect(30, 80, 54, 12))
         self.label_2.setObjectName("label_2")
-        self.FormatFileList = QtWidgets.QComboBox(self.groupBox)
+        self.FormatFileList = MyComboBox(self.groupBox)
         self.FormatFileList.setGeometry(QtCore.QRect(10, 100, 251, 22))
         self.FormatFileList.setObjectName("FormatFileList")
         self.label = QtWidgets.QLabel(self.groupBox)
@@ -37,7 +39,9 @@ class Ui_Form(object):
         self.bnt_tryPrint = QtWidgets.QPushButton(self.groupBox)
         self.bnt_tryPrint.setGeometry(QtCore.QRect(280, 100, 75, 23))
         self.bnt_tryPrint.setObjectName("bnt_tryPrint")
-        self.PrintersList = QtWidgets.QComboBox(self.groupBox)
+
+        self.PrintersList = MyComboBox(self.groupBox)
+        # self.PrintersList = QtWidgets.QComboBox(self.groupBox)
         self.PrintersList.setGeometry(QtCore.QRect(10, 40, 251, 22))
         self.PrintersList.setObjectName("PrintersList")
         self.groupBox_2 = QtWidgets.QGroupBox(Form)
@@ -127,7 +131,7 @@ class Ui_Form(object):
         self.label_9.setObjectName("label_9")
         self.horizontalLayout_2.addWidget(self.label_9)
         self.BaudrateList = QtWidgets.QComboBox(self.layoutWidget_2)
-        self.BaudrateList.setObjectName("BaudrateList")
+        self.PrintersList.setObjectName("BaudrateList")
         self.BaudrateList.addItem("")
         self.BaudrateList.addItem("")
         self.BaudrateList.addItem("")
