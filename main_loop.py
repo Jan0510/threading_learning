@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 # @Author  :   {Jan__}
 # @Time    :   2020/10/29 20:22
+import datetime
 import os
 import sys
 from PyQt5.QtWidgets import QApplication, QWidget, QMessageBox
@@ -31,19 +32,21 @@ class MyUi(QWidget, Ui_Form):
         self.bnt_sourceContentModify.clicked.connect(self.source_modify_slot)
         self.bnt_Start.clicked.connect(self.circle_run_start)
         self.bnt_Stop.clicked.connect(self.circle_run_stop)
-        self.bnt_tryPrint.clicked.connect(self.tryprint_slot)
+        self.bnt_tryPrint.clicked.connect(self.try_print_slot)
         self.bnt_scanSerial.clicked.connect(self.scan_port_list_slot)               # 扫描串口
         self.bnt_openSerial.clicked.connect(self.open_port_list_slot)               # 打开串口
         self.bnt_closeSerial.clicked.connect(self.close_port_list_slot)             # 关闭串口
         self.PrintersList.clicked.connect(self.scan_printer_list_slot)              # 扫描打印机
         self.bartender.eventSignal.connect(self.bartender_event_slot)  # 打印引擎的事件信息
         self.FormatFileList.currentIndexChanged.connect(self.btwfile_changed_slot)
-    def tryprint_slot(self):
+    def try_print_slot(self):
         btw_file_path = folder_path + "\\btw\\" + self.FormatFileList.currentText()
         self.bartender.set_btwfile_using(btw_file_path)
         nResult = self.bartender.my_print(self.PrintersList.currentText())
-        if nResult:
-            print(str(nResult))
+        if nResult == 0:
+            print("打印成功")
+        else:
+            print("打印失败")
     def scan_printer_list_slot(self):
         printers, default_printer = self.bartender.get_printer_list()
         self.PrintersList.setCurrentText(default_printer)
@@ -110,11 +113,19 @@ class MyUi(QWidget, Ui_Form):
             print("串口关闭成功")
     def bartender_event_slot(self, msg):
         print(msg)
+        self.my_log_print(self)
     def circle_run_stop(self):
         pass
     def circle_run_start(self):
         pass
-
+    def my_log_print(self, text):
+        # 获取当前时间
+        now_time = datetime.datetime.now().strftime('%T') + " : "
+        text = now_time + text + '\n'
+        self.LogPlain.insertPlainText(text)     # 显示在UI
+        self.my_logcat.logcat_into_file(text)   # 存在txt文件
+        if self.Log.blockCount() > 20:
+            self.Log.clear()
 if __name__ == '__main__':
     try:
         app = QApplication(sys.argv)  # 实例化一个应用对象，sys.argv是一组命令行参数的列表。Python可以在shell里运行，这是一种通过参数来选择启动脚本的方式。

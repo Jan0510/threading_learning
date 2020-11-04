@@ -13,7 +13,7 @@
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <widget class="QPlainTextEdit" name="Log">
+  <widget class="QPlainTextEdit" name="LogPlain">
    <property name="geometry">
     <rect>
      <x>420</x>
@@ -27,6 +27,9 @@
    </property>
    <property name="plainText">
     <string/>
+   </property>
+   <property name="centerOnScroll">
+    <bool>true</bool>
    </property>
   </widget>
   <widget class="QGroupBox" name="groupBox">

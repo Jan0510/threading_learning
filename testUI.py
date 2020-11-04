@@ -9,25 +9,24 @@
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 
-from Mycombobox import MyComboBox
-
 
 class Ui_Form(object):
     def setupUi(self, Form):
         Form.setObjectName("Form")
         Form.resize(842, 660)
-        self.Log = QtWidgets.QPlainTextEdit(Form)
-        self.Log.setGeometry(QtCore.QRect(420, 180, 241, 351))
-        self.Log.setReadOnly(True)
-        self.Log.setPlainText("")
-        self.Log.setObjectName("Log")
+        self.LogPlain = QtWidgets.QPlainTextEdit(Form)
+        self.LogPlain.setGeometry(QtCore.QRect(420, 180, 241, 351))
+        self.LogPlain.setReadOnly(True)
+        self.LogPlain.setPlainText("")
+        self.LogPlain.setCenterOnScroll(True)
+        self.LogPlain.setObjectName("LogPlain")
         self.groupBox = QtWidgets.QGroupBox(Form)
         self.groupBox.setGeometry(QtCore.QRect(20, 170, 381, 81))
         self.groupBox.setObjectName("groupBox")
         self.label = QtWidgets.QLabel(self.groupBox)
         self.label.setGeometry(QtCore.QRect(30, 20, 54, 12))
         self.label.setObjectName("label")
-        self.PrintersList = MyComboBox(self.groupBox)
+        self.PrintersList = QtWidgets.QComboBox(self.groupBox)
         self.PrintersList.setGeometry(QtCore.QRect(10, 40, 251, 22))
         self.PrintersList.setObjectName("PrintersList")
         self.groupBox_2 = QtWidgets.QGroupBox(Form)
@@ -71,7 +70,7 @@ class Ui_Form(object):
         self.label_7.setObjectName("label_7")
         self.lineEdit_sourceContent = QtWidgets.QLineEdit(self.groupBox_2)
         self.lineEdit_sourceContent.setGeometry(QtCore.QRect(110, 160, 181, 21))
-        self.lineEdit_sourceContent.setReadOnly(True)
+        self.lineEdit_sourceContent.setReadOnly(False)
         self.lineEdit_sourceContent.setObjectName("lineEdit_sourceContent")
         self.bnt_sourceContentModify = QtWidgets.QPushButton(self.groupBox_2)
         self.bnt_sourceContentModify.setGeometry(QtCore.QRect(300, 160, 51, 21))

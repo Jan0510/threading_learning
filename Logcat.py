@@ -24,9 +24,6 @@ class Logcat():
     # 打印日志信息到文本
     def logcat_into_file(self, text):
         if self.txtLogFile:
-            # 获取当前时间
-            now_time = datetime.datetime.now().strftime('%T') + " : "
-            text = now_time + text + '\n'
             self.txtLogFile.writelines(text)  # 写入文件
             self.txtLogFile.flush()  # 强制刷新，使数据从缓冲区推入txt文件中
             return True

@@ -78,7 +78,7 @@ class Bartender(QObject):
             self.btFormat.PrintSetup.PrinterName = printer
             # 调用库的打印函数，将数据推入打印队列
             nResult = self.btFormat.Print("printjob", waitForCompletionTimeout, btMessages)
-            return nResult                      # 0=成功，1=失败
+            return int(nResult)                      # 0=成功，1=失败
         except Exception as ex:
             print(ex)
             return 0
