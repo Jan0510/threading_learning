@@ -30,6 +30,7 @@ class Bartender(QObject):
         self.btEngine.JobResumed += EventHandler(self.btEngine_JobResumedSlot)
         self.btEngine.JobSent += EventHandler(self.btEngine_JobSentSlot)
         self.btFormat = None
+
     # 返回打印机列表[]
     def get_printer_list(self):
         printers = Printers()  # 获取打印机列表
@@ -37,15 +38,14 @@ class Bartender(QObject):
         for printer in printers:
             printer_list.append(printer.PrinterName)
         printer_list.append(printers.Default.PrinterName)      # 最后再补充一个默认打印机
-        return printer_list
+        return printer_list, printers.Default.PrinterName
+
     def get_data_dict(self):
         data_dict = {}
-        num = 0
         if self.btFormat:
-            num = self.btFormat.SubStrings.Count
             for substring in self.btFormat.SubStrings:
                 data_dict[substring.Name] = substring.Value
-        return num, data_dict
+        return data_dict
 
     def set_data_dict(self, data_dict):
         if len(data_dict) and self.btFormat:
@@ -54,18 +54,17 @@ class Bartender(QObject):
                     if substring.Name == key:
                         self.btFormat.SubStrings.SetSubString(key, value)
 
-    def set_btwfile_using(self, new_btwfile_name, if_save_oldfile):
-        if self.btFormat:
-            if if_save_oldfile:
-                self.btFormat.Close(SaveOptions.SaveChanges)
-            else:
-                self.btFormat.Close(SaveOptions.DoNotSaveChanges)
+    def set_btwfile_using(self, new_btwfile_name):
         try:
+            if self.btFormat:
+                self.btFormat.Close(SaveOptions.SaveChanges)
             self.btFormat = self.btEngine.Documents.Open(new_btwfile_name)
+            return True
         except Exception as ex:
             print(ex)
+            return False
 
-    def my_print(self):             # 返回nResult，0=成功，1=失败
+    def my_print(self, printer):             # 返回nResult，0=成功，1=失败
         # 判断bartender是否启动
         if self.btEngine.IsAlive:
             pass
@@ -76,6 +75,7 @@ class Bartender(QObject):
         waitForCompletionTimeout = 100          # 打印超时定时器 ms
 
         try:                                    # 开始打印
+            self.btFormat.PrintSetup.PrinterName = printer
             # 调用库的打印函数，将数据推入打印队列
             nResult = self.btFormat.Print("printjob", waitForCompletionTimeout, btMessages)
             return nResult                      # 0=成功，1=失败
