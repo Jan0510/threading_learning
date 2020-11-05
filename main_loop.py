@@ -6,22 +6,22 @@ import datetime
 import os
 import sys
 from PyQt5.QtWidgets import QApplication, QWidget, QMessageBox
-
 from Bartender import Bartender
-from Logcat import Logcat
+from FileSystem import FileSystem
 from SerialThread import SerialThread
 from testUI import Ui_Form
-folder_path = os.getcwd()  # 获取当前路径
-sys.path.append(folder_path)  # 加载当前路径
+
 class MyUi(QWidget, Ui_Form):
     def __init__(self):
         super(MyUi, self).__init__()    # 分别调用了2个父类的初始化函数
         self.setupUi(self)                          # UI界面控件的初始化
         self.my_serial = SerialThread()             # 串口
         self.bartender = Bartender()                # Bartender打印引擎
-        self.my_logcat = Logcat(folder_path+"\\Logfiles\\")                   # 日志
+        self.my_file_sys = FileSystem()   # 文件系统
+        self.init_configure()
         self.signal_connect()  # 信号与槽函数绑定
         self.oldbtwfile = None
+
     # 信号与槽函数绑定
     def signal_connect(self):
         self.scan_printer_list_slot()
@@ -40,8 +40,6 @@ class MyUi(QWidget, Ui_Form):
         self.bartender.eventSignal.connect(self.bartender_event_slot)  # 打印引擎的事件信息
         self.FormatFileList.currentIndexChanged.connect(self.btwfile_changed_slot)
     def try_print_slot(self):
-        btw_file_path = folder_path + "\\btw\\" + self.FormatFileList.currentText()
-        self.bartender.set_btwfile_using(btw_file_path)
         nResult = self.bartender.my_print(self.PrintersList.currentText())
         if nResult == 0:
             print("打印成功")
@@ -55,10 +53,9 @@ class MyUi(QWidget, Ui_Form):
             self.PrintersList.clear()
             for printer in printers:
                 self.PrintersList.addItem(printer, None)
-            
     def scan_btwfile_list_slot(self):
-        btwdir_path = folder_path + "\\btw\\"
-        file_list = os.listdir(btwdir_path)
+        folder_path = os.getcwd()  # 获取当前路径
+        file_list = os.listdir(folder_path + "\\btw\\")
         if file_list:
             print("扫描btw文件并刷新列表")
             self.FormatFileList.clear()
@@ -78,7 +75,7 @@ class MyUi(QWidget, Ui_Form):
         self.lineEdit_sourceContent.clear()
 
         # 2.设置btwfile，该函数会自动关闭保存旧的btw文件，然后打开新的btw文件
-        btw_file_path = folder_path+"\\btw\\"+self.FormatFileList.currentText()
+        btw_file_path = self.FormatFileList.currentText()
         res = self.bartender.set_btwfile_using(btw_file_path)
 
         # 3.读取btw文件回显到UI
@@ -88,7 +85,6 @@ class MyUi(QWidget, Ui_Form):
             for key in data_dict.keys():
                 self.SubstringList.addItem(str(key))
             self.lineEdit_sourceContent.setText(data_dict[str(self.SubstringList.currentText())])
-
     def source_modify_slot(self):
         data_dict = {}
         data_dict[self.SubstringList.currentText()] = int(self.lineEdit_sourceContent.text())
@@ -123,9 +119,32 @@ class MyUi(QWidget, Ui_Form):
         now_time = datetime.datetime.now().strftime('%T') + " : "
         text = now_time + text + '\n'
         self.LogPlain.insertPlainText(text)     # 显示在UI
-        self.my_logcat.logcat_into_file(text)   # 存在txt文件
-        if self.Log.blockCount() > 20:
-            self.Log.clear()
+        self.my_file_sys.logcat_into_file(text)   # 打印在txt文件
+        if self.LogPlain.blockCount() > 20:
+            self.LogPlain.clear()
+    # 软件启动后，读取配置文件并设置
+    def init_configure(self):
+        # 相关参数配置以字典形式返回
+        self.conf_dict = self.my_file_sys.get_conf_dict("default.ini")
+        if len(self.conf_dict) > 0:
+            self.lineEdit_terminalID.setText(self.conf_dict["terminalid"])
+            self.lineEdit_employeeID.setText(self.conf_dict["employeeid"])
+    # 软件关闭前，保存配置文件
+    def save_configure(self):
+        try:
+            self.conf_dict["terminalid"] = self.lineEdit_terminalID.text()
+            self.conf_dict["employeeid"] = self.lineEdit_employeeID.text()
+            self.my_file_sys.save_defualt_configure(self.conf_dict, "default.ini")
+        except Exception as ex:
+            print(ex)
+    # 重写app窗口关闭函数
+    def closeEvent(self, event):
+        reply = QMessageBox.question(self, '退出', "是否要退出程序？", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+        if reply == QMessageBox.Yes:
+            reply = QMessageBox.question(self, '保存配置', "对config文件是否要保存修改？", QMessageBox.Yes | QMessageBox.No,
+                                         QMessageBox.No)
+            if reply == QMessageBox.Yes:
+                self.save_configure()
 if __name__ == '__main__':
     try:
         app = QApplication(sys.argv)  # 实例化一个应用对象，sys.argv是一组命令行参数的列表。Python可以在shell里运行，这是一种通过参数来选择启动脚本的方式。

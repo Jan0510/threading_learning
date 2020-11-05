@@ -9,6 +9,8 @@
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 
+from Mycombobox import MyComboBox
+
 
 class Ui_Form(object):
     def setupUi(self, Form):
@@ -26,7 +28,7 @@ class Ui_Form(object):
         self.label = QtWidgets.QLabel(self.groupBox)
         self.label.setGeometry(QtCore.QRect(30, 20, 54, 12))
         self.label.setObjectName("label")
-        self.PrintersList = QtWidgets.QComboBox(self.groupBox)
+        self.PrintersList = MyComboBox(self.groupBox)
         self.PrintersList.setGeometry(QtCore.QRect(10, 40, 251, 22))
         self.PrintersList.setObjectName("PrintersList")
         self.groupBox_2 = QtWidgets.QGroupBox(Form)
@@ -160,6 +162,22 @@ class Ui_Form(object):
         self.bnt_break = QtWidgets.QPushButton(self.layoutWidget1)
         self.bnt_break.setObjectName("bnt_break")
         self.gridLayout.addWidget(self.bnt_break, 1, 2, 1, 1)
+        self.lineEdit_terminalID = QtWidgets.QLineEdit(self.groupBox_3)
+        self.lineEdit_terminalID.setGeometry(QtCore.QRect(70, 60, 51, 20))
+        self.lineEdit_terminalID.setTabletTracking(True)
+        self.lineEdit_terminalID.setReadOnly(False)
+        self.lineEdit_terminalID.setObjectName("lineEdit_terminalID")
+        self.lineEdit_employeeID = QtWidgets.QLineEdit(self.groupBox_3)
+        self.lineEdit_employeeID.setGeometry(QtCore.QRect(200, 60, 51, 20))
+        self.lineEdit_employeeID.setTabletTracking(True)
+        self.lineEdit_employeeID.setReadOnly(False)
+        self.lineEdit_employeeID.setObjectName("lineEdit_employeeID")
+        self.label_10 = QtWidgets.QLabel(self.groupBox_3)
+        self.label_10.setGeometry(QtCore.QRect(10, 60, 54, 12))
+        self.label_10.setObjectName("label_10")
+        self.label_11 = QtWidgets.QLabel(self.groupBox_3)
+        self.label_11.setGeometry(QtCore.QRect(140, 60, 54, 12))
+        self.label_11.setObjectName("label_11")
 
         self.retranslateUi(Form)
         QtCore.QMetaObject.connectSlotsByName(Form)
@@ -196,3 +214,7 @@ class Ui_Form(object):
         self.bnt_connect_2.setText(_translate("Form", "自动连接"))
         self.bnt_connect.setText(_translate("Form", "连接设备"))
         self.bnt_break.setText(_translate("Form", "断开连接"))
+        self.lineEdit_terminalID.setText(_translate("Form", "0"))
+        self.lineEdit_employeeID.setText(_translate("Form", "ATE"))
+        self.label_10.setText(_translate("Form", "TERMINALID"))
+        self.label_11.setText(_translate("Form", "员工编号"))
