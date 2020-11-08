@@ -71,6 +71,11 @@ def web_get():
         print(ex)
         return False
 
+# 从web获取SN范围后，初始化SN号码
+def web_init_SN():
+    pass
+
+
 #  "SERIAL_NUMBER": "BZJ614KM901580Z",
 #  "FUNCTION_NAME": "HWR650RUSN",
 #  "TARGET_QTY": 928,

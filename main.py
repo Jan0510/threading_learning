@@ -7,7 +7,6 @@ import os
 import sys
 from PyQt5.QtWidgets import QApplication, QWidget, QMessageBox
 from Bartender import Bartender
-from FileSystem import FileSystem
 from SerialThread import SerialThread
 from testUI import Ui_Form
 
@@ -17,7 +16,6 @@ class MyUi(QWidget, Ui_Form):
         self.setupUi(self)                          # UI界面控件的初始化
         self.my_serial = SerialThread()             # 串口
         self.bartender = Bartender()                # Bartender打印引擎
-        self.my_file_sys = FileSystem()   # 文件系统
         self.init_configure()
         self.signal_connect()  # 信号与槽函数绑定
         self.oldbtwfile = None
@@ -76,7 +74,6 @@ class MyUi(QWidget, Ui_Form):
 
         # 2.设置btwfile，该函数会自动关闭保存旧的btw文件，然后打开新的btw文件
         res = self.bartender.set_btwfile_using(self.FormatFileList.currentText())
-
         # 3.读取btw文件回显到UI
         if res:
             data_dict = self.bartender.get_data_dict()
