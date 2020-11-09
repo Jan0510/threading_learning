@@ -209,16 +209,24 @@ class MyUi(QWidget, Ui_Form):
         self.bartender.set_btwfile_using(filename)
         # 初始化SN码，先检查mes是否有给出初始SN
         original_SN = global_maneger.get_global_value('SERIAL_NUMBER')
-        if not original_SN:# 特殊情况：mes没有给出初始SN，需要根据规则生成一个初始SN
+        if not original_SN:     # 特殊情况1：mes没有给出初始SN，需要根据规则生成一个初始SN
             # SN模板读取出来
             SN_template = global_maneger.get_global_value('PARAME_VALUE')
-            list = SN_template.split()   # 将字符串按空格分段，返回字段列表，第一段是公司logo，第2段是产品料号
+            sections = SN_template.split()   # 将字符串按空格分段，返回字段列表，第一段是公司logo，第2段是产品料号
             ywd = datetime.now().isocalendar()  # (2020, 45, 7)tuple(年，周，日)
             y = str(ywd[0]%100).zfill(2)
             w = str(ywd[1]).zfill(2)
             d = str(ywd[2])
-            original_SN = list[0] + ' ' + list[1] + ' ' + y + w + d + "00001"
-
+            original_SN = sections[0] + ' ' + sections[1] + ' ' + y + w + d + "00001"
+        else:
+            sections = original_SN.split()
+            sec3 = sections[2]
+            ywd = datetime.now().isocalendar()  # (2020, 45, 7)tuple(年，周，日)
+            y = str(ywd[0] % 100).zfill(2)
+            w = str(ywd[1]).zfill(2)
+            d = str(ywd[2])
+            if d != sec3[4]:    # 特殊情况2：mes给出初始SN，与当天的日期不符，重新开始一个SN
+                original_SN = sections[0] + ' ' + sections[1] + ' ' + y + w + d + "00001"
         self.lineEdit_original_SN.setText(str(original_SN))
         self.lineEdit_TARGET_QTY.setText(str(global_maneger.get_global_value('TARGET_QTY')))
         self.lineEdit_SN_QTY.setText(str(global_maneger.get_global_value('SN_QTY')))
