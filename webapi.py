@@ -1,9 +1,5 @@
 import requests
 import global_maneger
-import datetime
-print(datetime.datetime.now().isocalendar())    # (2020, 45, 7)tuple(年，周，日)
-print(datetime.datetime.now().isocalendar()[2]) # 日
-
 def web_login():
 
     url = "https://epms.eastech.com/api/login/"
@@ -17,10 +13,8 @@ def web_login():
         if response.text.find("token") > 0:
             webapi_token = 'BEABER' + response.json()["token"]
             global_maneger.set_global_value("token", webapi_token)
-            print("web_login成功")
             return True
         else:
-            print("web_login失败")
             print(response.text)
             return False
     except Exception as ex:
@@ -38,10 +32,8 @@ def web_post(SN):
     try:
         response = requests.request("POST", url, headers=headers, data=payload, files=files, timeout=1)
         if response.text.find("OK") > 0:
-            print("web_post成功")
             return True
         else:
-            print("web_post失败")
             print(response.text)
             return False
     except Exception as ex:
@@ -56,27 +48,29 @@ def web_get():
     webapi_token = global_maneger.get_global_value("token")
     headers = {'Authorization': webapi_token}
     try:
-        response = requests.request("GET", url, headers=headers, data=payload, files=files, timeout=1)
+        response = requests.request("GET", url, headers=headers, data=payload, files=files, timeout=5)
         if response.text.find("detail") > 0:
-            print("web_get失败", response.text)
+            print(response.text)
             return False
         else:
             global_maneger.set_global_value("SERIAL_NUMBER", response.json()["SERIAL_NUMBER"])  # 最大SN
             global_maneger.set_global_value("FUNCTION_NAME", response.json()["FUNCTION_NAME"])  # 规则，对应着本地模板
             global_maneger.set_global_value("TARGET_QTY", response.json()["TARGET_QTY"])        # 目标生产量
             global_maneger.set_global_value("SN_QTY", response.json()["SN_QTY"])                # 当前生产量
-            print("web_get成功")
+            global_maneger.set_global_value("PARAME_VALUE", response.json()["PARAME_VALUE"])                # SN模板
+
             return True
     except Exception as ex:
         print(ex)
         return False
 
-# 从web获取SN范围后，初始化SN号码
-def web_init_SN():
-    pass
-
-
-#  "SERIAL_NUMBER": "BZJ614KM901580Z",
-#  "FUNCTION_NAME": "HWR650RUSN",
-#  "TARGET_QTY": 928,
-#  "SN_QTY": 928
+'''
+get的返回值
+{
+    "SERIAL_NUMBER": null,
+    "FUNCTION_NAME": "FSBB100360B03",
+    "TARGET_QTY": 1000,
+    "SN_QTY": 0,
+    "PARAME_VALUE": "EASTECH FSBB10036-0B03 YYWWKSSSSS"
+}
+'''

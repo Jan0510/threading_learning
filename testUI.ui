@@ -16,14 +16,14 @@
   <widget class="QTabWidget" name="tabWidget">
    <property name="geometry">
     <rect>
-     <x>20</x>
-     <y>10</y>
-     <width>711</width>
+     <x>30</x>
+     <y>20</y>
+     <width>411</width>
      <height>551</height>
     </rect>
    </property>
    <property name="currentIndex">
-    <number>0</number>
+    <number>1</number>
    </property>
    <widget class="QWidget" name="tab_2">
     <attribute name="title">
@@ -32,10 +32,10 @@
     <widget class="QGroupBox" name="groupBox_3">
      <property name="geometry">
       <rect>
-       <x>20</x>
+       <x>10</x>
        <y>10</y>
-       <width>641</width>
-       <height>91</height>
+       <width>331</width>
+       <height>121</height>
       </rect>
      </property>
      <property name="title">
@@ -133,8 +133,8 @@
      <widget class="QWidget" name="layoutWidget">
       <property name="geometry">
        <rect>
-        <x>380</x>
-        <y>20</y>
+        <x>10</x>
+        <y>50</y>
         <width>239</width>
         <height>54</height>
        </rect>
@@ -188,8 +188,8 @@
     <widget class="QGroupBox" name="groupBox">
      <property name="geometry">
       <rect>
-       <x>10</x>
-       <y>110</y>
+       <x>0</x>
+       <y>140</y>
        <width>381</width>
        <height>81</height>
       </rect>
@@ -221,30 +221,11 @@
       </property>
      </widget>
     </widget>
-    <widget class="QPlainTextEdit" name="LogPlain">
-     <property name="geometry">
-      <rect>
-       <x>450</x>
-       <y>150</y>
-       <width>241</width>
-       <height>351</height>
-      </rect>
-     </property>
-     <property name="readOnly">
-      <bool>true</bool>
-     </property>
-     <property name="plainText">
-      <string/>
-     </property>
-     <property name="centerOnScroll">
-      <bool>true</bool>
-     </property>
-    </widget>
     <widget class="QGroupBox" name="groupBox_2">
      <property name="geometry">
       <rect>
-       <x>10</x>
-       <y>200</y>
+       <x>0</x>
+       <y>220</y>
        <width>381</width>
        <height>301</height>
       </rect>
@@ -276,32 +257,6 @@
       </property>
       <property name="text">
        <string>数据源个数</string>
-      </property>
-     </widget>
-     <widget class="QPushButton" name="bnt_Start">
-      <property name="geometry">
-       <rect>
-        <x>30</x>
-        <y>210</y>
-        <width>75</width>
-        <height>23</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>运行</string>
-      </property>
-     </widget>
-     <widget class="QPushButton" name="bnt_Stop">
-      <property name="geometry">
-       <rect>
-        <x>130</x>
-        <y>210</y>
-        <width>75</width>
-        <height>23</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>停止</string>
       </property>
      </widget>
      <widget class="QLineEdit" name="lineEdit_PrintCount">
@@ -411,7 +366,7 @@
        <bool>false</bool>
       </property>
      </widget>
-     <widget class="QPushButton" name="bnt_sourceContentModify">
+     <widget class="QPushButton" name="bnt_tryModifySourceContent">
       <property name="geometry">
        <rect>
         <x>300</x>
@@ -424,7 +379,7 @@
        <string>修改</string>
       </property>
      </widget>
-     <widget class="QPushButton" name="bnt_readFile">
+     <widget class="QPushButton" name="bnt_tryReadFile">
       <property name="geometry">
        <rect>
         <x>280</x>
@@ -434,7 +389,7 @@
        </rect>
       </property>
       <property name="text">
-       <string>读取文件</string>
+       <string>试读取文件</string>
       </property>
      </widget>
      <widget class="QPushButton" name="bnt_tryPrint">
@@ -496,20 +451,20 @@
      <property name="geometry">
       <rect>
        <x>10</x>
-       <y>90</y>
-       <width>411</width>
-       <height>271</height>
+       <y>50</y>
+       <width>351</width>
+       <height>371</height>
       </rect>
      </property>
      <property name="title">
       <string>GroupBox</string>
      </property>
-     <widget class="QLineEdit" name="lineEdit_employeeID">
+     <widget class="QLineEdit" name="lineEdit_password">
       <property name="geometry">
        <rect>
-        <x>80</x>
-        <y>70</y>
-        <width>51</width>
+        <x>100</x>
+        <y>56</y>
+        <width>133</width>
         <height>20</height>
        </rect>
       </property>
@@ -517,7 +472,7 @@
        <bool>true</bool>
       </property>
       <property name="text">
-       <string>ATE</string>
+       <string>Windows123..</string>
       </property>
       <property name="readOnly">
        <bool>false</bool>
@@ -526,22 +481,22 @@
      <widget class="QLabel" name="label_11">
       <property name="geometry">
        <rect>
-        <x>20</x>
-        <y>80</y>
-        <width>54</width>
-        <height>12</height>
+        <x>34</x>
+        <y>56</y>
+        <width>24</width>
+        <height>16</height>
        </rect>
       </property>
       <property name="text">
        <string>密码</string>
       </property>
      </widget>
-     <widget class="QLineEdit" name="lineEdit_terminalID">
+     <widget class="QLineEdit" name="lineEdit_employeeID">
       <property name="geometry">
        <rect>
-        <x>80</x>
-        <y>40</y>
-        <width>51</width>
+        <x>100</x>
+        <y>20</y>
+        <width>133</width>
         <height>20</height>
        </rect>
       </property>
@@ -549,7 +504,7 @@
        <bool>true</bool>
       </property>
       <property name="text">
-       <string>0</string>
+       <string>ate</string>
       </property>
       <property name="readOnly">
        <bool>false</bool>
@@ -558,10 +513,10 @@
      <widget class="QLabel" name="label_10">
       <property name="geometry">
        <rect>
-        <x>20</x>
-        <y>50</y>
-        <width>54</width>
-        <height>12</height>
+        <x>34</x>
+        <y>20</y>
+        <width>48</width>
+        <height>16</height>
        </rect>
       </property>
       <property name="text">
@@ -572,9 +527,9 @@
       <property name="geometry">
        <rect>
         <x>20</x>
-        <y>140</y>
-        <width>81</width>
-        <height>21</height>
+        <y>240</y>
+        <width>60</width>
+        <height>16</height>
        </rect>
       </property>
       <property name="text">
@@ -584,23 +539,23 @@
      <widget class="QLabel" name="label_13">
       <property name="geometry">
        <rect>
-        <x>20</x>
-        <y>170</y>
-        <width>61</width>
+        <x>10</x>
+        <y>270</y>
+        <width>91</width>
         <height>16</height>
        </rect>
       </property>
       <property name="text">
-       <string>已生产数量</string>
+       <string>工单目前生产量</string>
       </property>
      </widget>
      <widget class="QLabel" name="label_14">
       <property name="geometry">
        <rect>
-        <x>20</x>
-        <y>120</y>
-        <width>54</width>
-        <height>12</height>
+        <x>34</x>
+        <y>92</y>
+        <width>36</width>
+        <height>16</height>
        </rect>
       </property>
       <property name="text">
@@ -610,10 +565,10 @@
      <widget class="QLabel" name="label_15">
       <property name="geometry">
        <rect>
-        <x>20</x>
-        <y>200</y>
-        <width>54</width>
-        <height>12</height>
+        <x>34</x>
+        <y>306</y>
+        <width>36</width>
+        <height>16</height>
        </rect>
       </property>
       <property name="text">
@@ -623,91 +578,226 @@
      <widget class="QLabel" name="label_16">
       <property name="geometry">
        <rect>
-        <x>20</x>
-        <y>220</y>
-        <width>54</width>
-        <height>12</height>
+        <x>34</x>
+        <y>342</y>
+        <width>36</width>
+        <height>16</height>
        </rect>
       </property>
       <property name="text">
        <string>OK数量</string>
       </property>
      </widget>
-     <widget class="QLineEdit" name="lineEdit">
+     <widget class="QLineEdit" name="lineEdit_workOrder">
       <property name="geometry">
        <rect>
-        <x>90</x>
-        <y>110</y>
-        <width>113</width>
+        <x>100</x>
+        <y>92</y>
+        <width>133</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>EM_SPKLABEL_AUTO_TEST01</string>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="lineEdit_SN_QTY">
+      <property name="geometry">
+       <rect>
+        <x>100</x>
+        <y>270</y>
+        <width>133</width>
         <height>20</height>
        </rect>
       </property>
      </widget>
-     <widget class="QLineEdit" name="lineEdit_2">
+     <widget class="QLineEdit" name="lineEdit_NGnum">
       <property name="geometry">
        <rect>
-        <x>90</x>
-        <y>140</y>
-        <width>113</width>
+        <x>100</x>
+        <y>306</y>
+        <width>133</width>
         <height>20</height>
        </rect>
       </property>
+      <property name="text">
+       <string>0</string>
+      </property>
      </widget>
-     <widget class="QLineEdit" name="lineEdit_3">
+     <widget class="QLineEdit" name="lineEdit_OKnum">
       <property name="geometry">
        <rect>
-        <x>90</x>
-        <y>170</y>
-        <width>113</width>
+        <x>100</x>
+        <y>342</y>
+        <width>133</width>
         <height>20</height>
        </rect>
       </property>
-     </widget>
-     <widget class="QLineEdit" name="lineEdit_4">
-      <property name="geometry">
-       <rect>
-        <x>90</x>
-        <y>190</y>
-        <width>113</width>
-        <height>20</height>
-       </rect>
-      </property>
-     </widget>
-     <widget class="QLineEdit" name="lineEdit_5">
-      <property name="geometry">
-       <rect>
-        <x>90</x>
-        <y>210</y>
-        <width>113</width>
-        <height>20</height>
-       </rect>
+      <property name="text">
+       <string>0</string>
       </property>
      </widget>
      <widget class="QLabel" name="label_17">
       <property name="geometry">
        <rect>
-        <x>220</x>
-        <y>110</y>
+        <x>34</x>
+        <y>210</y>
+        <width>41</width>
+        <height>16</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>初始SN</string>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="lineEdit_original_SN">
+      <property name="geometry">
+       <rect>
+        <x>100</x>
+        <y>210</y>
+        <width>133</width>
+        <height>20</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="lineEdit_TARGET_QTY">
+      <property name="geometry">
+       <rect>
+        <x>100</x>
+        <y>240</y>
+        <width>133</width>
+        <height>20</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_18">
+      <property name="geometry">
+       <rect>
+        <x>30</x>
+        <y>120</y>
         <width>54</width>
         <height>12</height>
        </rect>
       </property>
       <property name="text">
-       <string>SN</string>
+       <string>标签文件</string>
       </property>
      </widget>
-     <widget class="QLineEdit" name="lineEdit_6">
+     <widget class="QLineEdit" name="lineEdit_btwFileName">
       <property name="geometry">
        <rect>
-        <x>260</x>
-        <y>110</y>
-        <width>113</width>
+        <x>100</x>
+        <y>120</y>
+        <width>133</width>
         <height>20</height>
        </rect>
       </property>
      </widget>
+     <widget class="QPushButton" name="bnt_webapi_login">
+      <property name="geometry">
+       <rect>
+        <x>250</x>
+        <y>60</y>
+        <width>75</width>
+        <height>23</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>登录mes</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="bnt_webapi_get">
+      <property name="enabled">
+       <bool>false</bool>
+      </property>
+      <property name="geometry">
+       <rect>
+        <x>250</x>
+        <y>90</y>
+        <width>75</width>
+        <height>23</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>上传工单</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="bnt_init_SN">
+      <property name="enabled">
+       <bool>false</bool>
+      </property>
+      <property name="geometry">
+       <rect>
+        <x>250</x>
+        <y>120</y>
+        <width>75</width>
+        <height>23</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>初始化SN</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="bnt_modify_btw_file">
+      <property name="enabled">
+       <bool>false</bool>
+      </property>
+      <property name="geometry">
+       <rect>
+        <x>250</x>
+        <y>210</y>
+        <width>75</width>
+        <height>23</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>修改SN</string>
+      </property>
+     </widget>
+    </widget>
+    <widget class="QPushButton" name="bnt_startAutoRun">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+     <property name="geometry">
+      <rect>
+       <x>40</x>
+       <y>460</y>
+       <width>75</width>
+       <height>23</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>运行</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="bnt_stopAutoRun">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+     <property name="geometry">
+      <rect>
+       <x>140</x>
+       <y>460</y>
+       <width>75</width>
+       <height>23</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>停止</string>
+     </property>
     </widget>
    </widget>
+  </widget>
+  <widget class="QTextEdit" name="LogPlain">
+   <property name="geometry">
+    <rect>
+     <x>460</x>
+     <y>130</y>
+     <width>241</width>
+     <height>351</height>
+    </rect>
+   </property>
   </widget>
  </widget>
  <resources/>

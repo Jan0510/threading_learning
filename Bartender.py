@@ -55,6 +55,7 @@ class Bartender(QObject):
                         self.btFormat.SubStrings.SetSubString(key, value)
 
     def set_btwfile_using(self, new_btwfile_name):
+        # 关闭并保存旧文件，打开新文件
         try:
             new_file_path = FolderPath + "\\btw\\" + new_btwfile_name
             if self.btFormat:
@@ -64,7 +65,9 @@ class Bartender(QObject):
         except Exception as ex:
             print(ex)
             return False
-
+    def close_btwfile(self):
+        if self.btFormat:
+            self.btFormat.Close(SaveOptions.SaveChanges)
     def my_print(self, printer, filepath):             # 返回nResult，0=成功，1=失败
         # 判断bartender是否启动
         if self.btEngine.IsAlive:
