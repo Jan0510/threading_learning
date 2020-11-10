@@ -45,6 +45,7 @@ class MyUi(QWidget, Ui_Form):
         self.PrintersList.clicked.connect(self.scan_printer_list_slot)              # 扫描打印机
         self.bartender.eventSignal.connect(self.bartender_event_slot)  # 打印引擎的事件信息
         self.FormatFileList.currentIndexChanged.connect(self.btwfile_changed_slot)
+        self.my_serial.dataReadoutSignal.connect(self.serial_receive_slot)
     def try_print_slot(self):
         nResult = self.bartender.my_print(self.PrintersList.currentText(), self.FormatFileList.currentText())
         if nResult == 0:
@@ -120,6 +121,11 @@ class MyUi(QWidget, Ui_Form):
         if self.my_serial.alive:
             self.my_serial.stop()
             self.my_log_print("串口关闭成功")
+    def serial_receive_slot(self):
+        if not global_maneger.get_global_value('serial_connect'):
+            global_maneger.set_global_value('serial_connect', True)
+        # 将串口返回的状态数据回显到UI上
+        # 判断是否需要启动打印、贴标质量检测
     def bartender_event_slot(self, msg):
         self.my_log_print(msg)
         if msg.find("发送") > 0:

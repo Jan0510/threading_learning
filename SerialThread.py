@@ -9,26 +9,23 @@ from PyQt5.QtCore import pyqtSignal, QTimer
 
 class SerialThread:
     # 在初始化函数__init__ 之前加入的就是自定义信号的申明,这个声明只能在初始化函数外面
-    dataReadoutSignal = pyqtSignal(dict) # 输出信号，用于告知调用者，发送和接受情况
-
+    dataReadoutSignal = pyqtSignal(int) # 输出信号，用于告知调用者，发送和接受情况
     def __init__(self):
         # 构造时不配置串口，打开时才配置
-
         self.my_serial = serial.Serial()
         self.com_dict = {}  # 存放串口名-串口号
         self.send_buffer = []
-        self.send_flag = False
         self.read_buffer = []
-        self.read_flag = False
         self.alive = False              # 串口工作标志，供多个子线程访问
-        self.waitEnd = None             # 存放threading.Event()创建的event标志
-        self.thread_read = None # threading.Thread()
-        self.thread_send = None
-
-        self.modbus_reg = [0]*200    # 索引对应于modbus寄存器地址，0-99只读，100-199只写
-        self.modbus_03resend_timer = QTimer(self)       # 重发定时器
+        self.thread_serial = None         # threading.Thread()
+        self.modbus_reg = [0]*21    # 索引+1对应于modbus寄存器地址
         self.modbus_10resend_timer = QTimer(self)       # 重发定时器
+        self.modbus_10resend_timer.timeout.connect(self.modbus_10resend_slot)
+        self.modbus_10cmd_timeout = 100                 # ms，没收到10cmd的应答则重发
         self.sender_timer = QTimer(self)                # 主站轮询定时器
+        self.sender_timer.timeout.connect(self.sender_management_slot)
+        self.sender_timer_timeout = 250                 # 主站固定时间轮询一次
+
 
     # 串口检测
     def scan(self):
@@ -42,7 +39,7 @@ class SerialThread:
             # "%s:%d"%("ab",3) => "ab:3"，%s表示格化式一个对象为字符串，%d表示整数。
         return self.com_dict
 
-    # 在主线程中，开启2个子线程作为串口接收、发送
+    # 在主线程中，开启子线程作为串口接收、发送
     def start(self, port, baudrate=115200, bytesize=8, stopbits=1, parity='N', timeout=0):
         self.my_serial.port = port       # 串口号
         self.my_serial.baudrate = baudrate   # 波特率
@@ -50,87 +47,61 @@ class SerialThread:
         self.my_serial.stopbits = stopbits   # 停止位
         self.my_serial.parity = parity        # 校验位
         self.my_serial.timeout = timeout     # 超时时间
-
         try:
             # 开串口
             self.my_serial.open()
         except Exception as ex:
             print(ex)
         if self.my_serial.isOpen():
-            # self.waitEnd = threading.Event() # 事件标志位，2个子线程公用一个
             self.alive = True
-            self.thread_read = threading.Thread(target=self.reader)
-            self.thread_read.setDaemon(True)        # setDaemon(True)，则为守护进程，主线程结束时，守护线程被强制结束
-            self.thread_send = threading.Thread(target=self.sender)
-            self.thread_send.setDaemon(True)        # setDaemon(True)，则为守护进程，主线程结束时，守护线程被强制结束
-
-            self.thread_read.start()
-            self.thread_send.start()
+            self.thread_serial = threading.Thread(target=self.thread_loop)
+            self.thread_serial.setDaemon(True)        # setDaemon(True)，则为守护进程，主线程结束时，守护线程被强制结束
+            self.thread_serial.start()
             return True
         else:
             return False
-    def reader(self):
+    def thread_loop(self):
+        self.sender_timer.start(100)        # 启动轮询定时器，100ms
         while self.alive:
-
             self.data_num = self.my_serial.inWaiting()
             time.sleep(0.1)                         # 睡眠0.1秒
             try:
+                # 串口空闲原理：一段时间内num不增加，说明出现空闲时间，利用空闲时间分割2个数据帧
                 if self.data_num > 0 and self.data_num == self.my_serial.inWaiting():
                     self.read_buffer = self.my_serial.read(self.data_num)
-                    print('recv' + ' ' + time.strftime("%Y-%m-%d %X") + ' ' + str(self.read_buffer))
+                    self.modbus_Receive_Translate(self.read_buffer, self.data_num)
                     self.data_num = 0
-                    self.read_flag = True
-                    # 将数据返回
-                    self.send_buffer = self.read_buffer
-                    self.send_flag = True
+                    print('recv' + ' ' + time.strftime("%Y-%m-%d %X") + ' ' + str(self.read_buffer))
                 else:
                     self.data_num = self.my_serial.inWaiting()
-                        
             except Exception as ex:
                 print(ex)
-       # self.waitEnd.set()
-       # self.alive = False
-    def sender(self):
-        while self.alive:
-            if self.send_flag:
-                try:
-                    self.my_serial.write(self.send_buffer)
-                    print('sent' + ' ' + time.strftime("%Y-%m-%d %X"))
-                    self.send_buffer = ""
-                    self.send_flag = False
-                except Exception as ex:
-                    print(ex)
-        # self.waitEnd.set() # 线程结束
-        # self.alive = False
 
     # 串口停止
     def stop(self):
         self.alive = False
-        self.thread_read.join() # join方法主要是会阻塞主线程，在子线程结束运行前，主线程会被阻塞等待。
-        self.thread_send.join()
+        self.sender_timer.stop()
+        self.thread_serial.join() # join方法主要是会阻塞主线程，在子线程结束运行前，主线程会被阻塞等待。
         if self.my_serial.isOpen():
             self.my_serial.close()
-
-    def modbus_03cmd(self):
+    def modbus_send03cmd(self, start_addr=1, num=3):
         send_buf = bytearray(8)#返回一个长度为 8 的初始化数组
         send_buf[0] = 0x01    #地址
         send_buf[1] = 0x03    #功能码
-        send_buf[2] = 0   # startaddr，0-99只读
-        send_buf[3] = 0   # 从0开始，读取modbus_reg寄存器列表
-        send_buf[4] = 0   # number
-        send_buf[5] = 100  # 100个寄存器
+        send_buf[2] = start_addr // 256  # startaddr
+        send_buf[3] = start_addr % 256  #
+        send_buf[4] = num // 256  # number
+        send_buf[5] = num % 256  #
         crc16 = getcrc16(send_buf, 6)
         send_buf[6] = crc16 // 256
         send_buf[7] = crc16 % 256
-        self.modbus_03cmd_wait = 2          # 等待应答标志位
         num = self.my_serial.write(send_buf)      # 串口写并返回字节数
-
-    def modbus_10cmd(self, start_addr, num):
+    def modbus_send10cmd(self, start_addr=1, num=18):
         send_buf = bytearray(8+num*2)  # 返回一个长度为 * 的初始化数组
         send_buf[0] = 0x01  # 地址
         send_buf[1] = 0x10  # 功能码
-        send_buf[2] = start_addr // 256     # startaddr，100-199只写
-        send_buf[3] = start_addr % 256      # startaddr，100-199只写
+        send_buf[2] = start_addr // 256     # startaddr
+        send_buf[3] = start_addr % 256      # startaddr
         send_buf[4] = num // 256  # number
         send_buf[5] = num % 256  # number
         for i in range(num):
@@ -139,43 +110,80 @@ class SerialThread:
         crc16 = getcrc16(send_buf, 8+num*2-2)
         send_buf[8+num*2-2] = crc16 // 256
         send_buf[8+num*2-1] = crc16 % 256
-        num = self.my_serial.write(send_buf)  # 串口写并返回字节数
-
+        num = self.my_serial.write(send_buf)    # 串口写并返回字节数
+        self.modbus_10cmd_wait = True           # 等待应答标志位
+        self.modbus_10resend_timer.start(self.modbus_10cmd_timeout)
     def modbus_Receive_Translate(self, data, length):
         # 只当执行到modbus_Receive_Translate函数时才会创建，并作为实例变量一直存在
         data_crc = getcrc16(data, length-2)
         if data[0] == 0x01 and data_crc//256 == data[length-2] and data_crc % 256 == data[length-1]:
             if data[1] == 0x03:         # 03 功能码，读
-                self.modbus_03resend_timer.stop()  # 关闭定时器
                 self.modbus_03cmd_wait = False
                 reg_num = data[2]       # 字节数目
                 for i in range(0, reg_num//2):  # 0-99只读，把数据填入modbus_reg队列
                     self.modbus_reg[i] = data[3+i*2]*256 + data[4+i*2]
-
+                # 把modbus_reg数组转移到全局变量中
+                self.move_modbus_reg_to_global_value()
             elif data[1] == 0x10:
                 # 写命令的应答只要CRC通过就行
+                global_maneger.set_global_value('send_to_PLC', False)
                 self.modbus_10resend_timer.stop()  # 关闭定时器
                 self.modbus_10cmd_wait = False
 
-            # 连接成功标志位,只在关闭串口时写0
-            status = global_maneger.get_global_value('serial_connect')
-            if not status:
-                global_maneger.set_global_value('serial_connect', True)
+            # 串口接收到数据，发送信号给外部槽函数，功能码作为传递参数
+            self.dataReadoutSignal.emit(data[1])
         else:
             print("CRC_ERROR")
-
     def sender_management_slot(self):
-        if self.modbus_03cmd_wait or self.modbus_10cmd_wait:
-            return
+        # 主站轮询函数，被轮询定时器触发
         if self.alive:
+            # 如果轮询周期到，但还在等10cmd的应答，说明cmd10应答超时
+            if self.modbus_10cmd_wait:
+                self.dataReadoutSignal.emit(0)      # 串口应答超时，发送信号给外部槽函数，0作为传递参数
+                self.sender_timer.stop()            # 主站轮询定时器关闭
+                self.modbus_10resend_timer.stop()   # 应答定时器关闭
+                self.modbus_10cmd_wait = False
+                print("cmd10应答超时")
+                return
             if global_maneger.get_global_value('send_to_PLC'):
                 # 把全局变量转移到modbus_reg数组中
-                self.modbus_10cmd(100, 8)
-                return
-            self.modbus_03cmd()
-
-
-
+                self.move_global_value_to_modbus_reg()
+                self.modbus_send10cmd()
+            else:
+                self.modbus_send03cmd()
+            self.sender_timer.start(self.sender_timer_timeout)  # 再次启动轮询定时器，1ms
+    def modbus_10resend_slot(self):
+        # 10cmd应答超时，数据重发函数，被应答定时器触发
+        if self.modbus_10cmd_wait:
+            self.modbus_send10cmd()
+    def move_global_value_to_modbus_reg(self):
+        # read-write寄存器
+        self.modbus_reg[1] = global_maneger.get_global_value('status_print')
+        self.modbus_reg[2] = global_maneger.get_global_value('status_recheck')
+        self.modbus_reg[3] = global_maneger.get_global_value('cmd_mode')
+        # only-write寄存器
+        self.modbus_reg[11] = global_maneger.get_global_value('x_1')
+        self.modbus_reg[12] = global_maneger.get_global_value('y_1')
+        self.modbus_reg[13] = global_maneger.get_global_value('print_res_1')
+        self.modbus_reg[14] = global_maneger.get_global_value('x_2')
+        self.modbus_reg[15] = global_maneger.get_global_value('y_2')
+        self.modbus_reg[16] = global_maneger.get_global_value('print_res_2')
+        self.modbus_reg[17] = global_maneger.get_global_value('recheck_res_1')
+        self.modbus_reg[18] = global_maneger.get_global_value('recheck_res_2')
+    def move_modbus_reg_to_global_value(self):
+        # read-write寄存器
+        global_maneger.set_global_value('status_print', self.modbus_reg[1])
+        global_maneger.set_global_value('status_recheck', self.modbus_reg[2])
+        global_maneger.set_global_value('cmd_mode', self.modbus_reg[3])
+        # only-write寄存器
+        global_maneger.set_global_value('x_1', self.modbus_reg[11])
+        global_maneger.set_global_value('y_1', self.modbus_reg[12])
+        global_maneger.set_global_value('print_res_1', self.modbus_reg[13])
+        global_maneger.set_global_value('x_2', self.modbus_reg[14])
+        global_maneger.set_global_value('y_2', self.modbus_reg[15])
+        global_maneger.set_global_value('print_res_2', self.modbus_reg[16])
+        global_maneger.set_global_value('recheck_res_1', self.modbus_reg[17])
+        global_maneger.set_global_value('recheck_res_2', self.modbus_reg[18])
 
 aucCRCLo = [
     0x00, 0xC0, 0xC1, 0x01, 0xC3, 0x03, 0x02, 0xC2, 0xC6, 0x06, 0x07, 0xC7, 0x05, 0xC5, 0xC4, 0x04, 0xCC,
