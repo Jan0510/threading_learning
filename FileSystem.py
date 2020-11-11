@@ -4,6 +4,7 @@
 # @Time    :   2020/11/5 13:48
 import configparser
 import datetime as dt
+import operator
 import os
 
 FolderPath = os.getcwd()  # 获取当前路径
@@ -16,7 +17,7 @@ class FileSystem:
         if (os.path.exists(self.logDirPath)):
             pass
         else:
-            os.mkdir(LogdirPath)
+            os.mkdir(self.logDirPath)
 
         # 'a'表示可连续写入到文件，保留原内容，在原内容之后写入。'w'会自动清空文件内容。
         Logfilename = "%s_Log.txt" % dt.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
@@ -33,15 +34,17 @@ class FileSystem:
         filePath = self.confDirPath + file
         cf = configparser.ConfigParser()
         cf.read(filePath)
-        conf_dict = {}
+        self.conf_dict = {}
         sec = cf.sections()
         if len(sec) > 0:
             try:
                 for key, value in cf.items("config"):
-                    conf_dict[key] = value
+                    self.conf_dict[key] = value
             except Exception as ex:
                 print(ex)
-        return conf_dict
+        return self.conf_dict
+    def if_diff(self, new_dict):
+        return operator.eq(self.conf_dict, new_dict)
     def save_defualt_configure(self, conf_dict, file):
         filePath = self.confDirPath + file
         cf = configparser.ConfigParser()

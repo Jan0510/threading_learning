@@ -4,13 +4,14 @@ import threading
 import global_maneger
 import time
 import serial
-from PyQt5.QtCore import pyqtSignal, QTimer
+from PyQt5.QtCore import pyqtSignal, QTimer, QObject
 
 
-class SerialThread:
+class SerialThread(QObject):        # 需要继承QObject才可以使用QTimer
     # 在初始化函数__init__ 之前加入的就是自定义信号的申明,这个声明只能在初始化函数外面
     dataReadoutSignal = pyqtSignal(int) # 输出信号，用于告知调用者，发送和接受情况
     def __init__(self):
+        super(SerialThread, self).__init__()  # 分别调用了2个父类的初始化函数
         # 构造时不配置串口，打开时才配置
         self.my_serial = serial.Serial()
         self.com_dict = {}  # 存放串口名-串口号

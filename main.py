@@ -149,37 +149,36 @@ class MyUi(QWidget, Ui_Form):
     def init_configure(self):
         # 相关参数配置以字典形式返回
         self.my_log_print("读取配置文件并设置")
-        self.conf_dict = self.my_file_sys.get_conf_dict("default.ini")
-        if len(self.conf_dict) > 0:
+        conf_dict = self.my_file_sys.get_conf_dict("default.ini")
+        if len(conf_dict) > 0:
             try:
-                if self.conf_dict["employee_id"]:
-                    self.lineEdit_employeeID.setText(self.conf_dict["employee_id"])
-                if self.conf_dict["password"]:
-                    self.lineEdit_password.setText(self.conf_dict["password"])
-                if self.conf_dict["work_order"]:
-                    self.lineEdit_workOrder.setText(self.conf_dict["work_order"])
+                if conf_dict["employee_id"]:
+                    self.lineEdit_employeeID.setText(conf_dict["employee_id"])
+                if conf_dict["password"]:
+                    self.lineEdit_password.setText(conf_dict["password"])
+                if conf_dict["work_order"]:
+                    self.lineEdit_workOrder.setText(conf_dict["work_order"])
             except Exception as ex:
                 print(ex)
-
     # 软件关闭前，保存配置文件
-    def save_configure(self):
-        self.my_log_print("软件关闭前保存配置文件")
+    def save_configure(self, filename='default.ini'):
         try:
-            self.conf_dict["employee_id"] = self.lineEdit_employeeID.text()
-            self.conf_dict["password"] = self.lineEdit_password.text()
-            self.conf_dict["work_order"] = self.lineEdit_workOrder.text()
-
-            self.my_file_sys.save_defualt_configure(self.conf_dict, "default.ini")
+            conf_dict = {}
+            conf_dict["employee_id"] = self.lineEdit_employeeID.text()
+            conf_dict["password"] = self.lineEdit_password.text()
+            conf_dict["work_order"] = self.lineEdit_workOrder.text()
+            if self.my_file_sys.if_diff(conf_dict):
+                reply = QMessageBox.question(self, '保存配置', "对config文件是否要保存修改？",
+                                             QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+                if reply:
+                    self.my_file_sys.save_defualt_configure(conf_dict, filename)
         except Exception as ex:
             print(ex)
     # 重写app窗口关闭函数
     def closeEvent(self, event):
         reply = QMessageBox.question(self, '退出', "是否要退出程序？", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
         if reply == QMessageBox.Yes:
-            reply = QMessageBox.question(self, '保存配置', "对config文件是否要保存修改？", QMessageBox.Yes | QMessageBox.No,
-                                         QMessageBox.No)
-            if reply == QMessageBox.Yes:
-                self.save_configure()
+            self.save_configure()
         else:
             event.ignore()
 
