@@ -3,3 +3,4 @@ venv/
 *.dll
 Log/
 btw/
+__pycache__/
