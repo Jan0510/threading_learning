@@ -44,7 +44,7 @@ class FileSystem:
                 print(ex)
         return self.conf_dict
     def if_diff(self, new_dict):
-        return operator.eq(self.conf_dict, new_dict)
+        return not operator.eq(self.conf_dict, new_dict)
     def save_defualt_configure(self, conf_dict, file):
         filePath = self.confDirPath + file
         cf = configparser.ConfigParser()

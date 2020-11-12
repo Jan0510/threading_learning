@@ -3,7 +3,8 @@
 # @Author  :   {Jan__}
 # @Time    :   2020/11/7 10:38
 
-
+'''全局变量表
+'''
 _global_dict = {}
 
 def _init():  # 初始化

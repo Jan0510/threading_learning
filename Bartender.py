@@ -11,8 +11,8 @@ FolderPath = os.getcwd()  # 获取当前路径
 sys.path.append(FolderPath)  # 加载当前路径
 clr.FindAssembly("Seagull.BarTender.Print.dll")
 clr.AddReference("Seagull.BarTender.Print")
-clr.FindAssembly("mscorlib.dll")
-clr.AddReference("mscorlib")
+# clr.FindAssembly("mscorlib.dll")
+# clr.AddReference("mscorlib")
 from Seagull.BarTender.Print import Engine, Printers, Printer, LabelFormatDocument, Messages, Message, SaveOptions
 from System import EventHandler
 class Bartender(QObject):
@@ -30,7 +30,7 @@ class Bartender(QObject):
         self.btEngine.JobResumed += EventHandler(self.btEngine_JobResumedSlot)
         self.btEngine.JobSent += EventHandler(self.btEngine_JobSentSlot)
         self.btFormat = None
-
+        self.btwfile_using = None
     # 返回打印机列表[]
     def get_printer_list(self):
         printers = Printers()  # 获取打印机列表
@@ -39,28 +39,29 @@ class Bartender(QObject):
             printer_list.append(printer.PrinterName)
         printer_list.append(printers.Default.PrinterName)      # 最后再补充一个默认打印机
         return printer_list, printers.Default.PrinterName
-
     def get_data_dict(self):
         data_dict = {}
         if self.btFormat:
             for substring in self.btFormat.SubStrings:
                 data_dict[substring.Name] = substring.Value
         return data_dict
-
     def set_data_dict(self, data_dict):
         if len(data_dict) and self.btFormat:
             for key, value in data_dict:
                 for substring in self.btFormat.SubStrings:
                     if substring.Name == key:
                         self.btFormat.SubStrings.SetSubString(key, value)
-
     def set_btwfile_using(self, new_btwfile_name):
+        # 不能重复打开
+        if new_btwfile_name and self.btwfile_using == new_btwfile_name:
+            return True
         # 关闭并保存旧文件，打开新文件
         try:
             new_file_path = FolderPath + "\\btw\\" + new_btwfile_name
             if self.btFormat:
                 self.btFormat.Close(SaveOptions.SaveChanges)
             self.btFormat = self.btEngine.Documents.Open(new_file_path)
+            self.btwfile_using = new_btwfile_name
             return True
         except Exception as ex:
             print(ex)
@@ -68,16 +69,14 @@ class Bartender(QObject):
     def close_btwfile(self):
         if self.btFormat:
             self.btFormat.Close(SaveOptions.SaveChanges)
-    def my_print(self, printer, filepath):             # 返回nResult，0=成功，1=失败
+    def my_print(self, printer):             # 返回nResult，0=成功，1=失败
         # 判断bartender是否启动
         if self.btEngine.IsAlive:
             pass
         else:
             self.btEngine.Start()
-
         btMessages = Messages()                 # 打印返回的消息
         waitForCompletionTimeout = 100          # 打印超时定时器 ms
-
         try:                                    # 开始打印
             self.btFormat.PrintSetup.PrinterName = printer
             # 调用库的打印函数，将数据推入打印队列
@@ -85,7 +84,7 @@ class Bartender(QObject):
             return int(nResult)                      # 0=成功，1=失败
         except Exception as ex:
             print(ex)
-            return 0
+            return 1
     # 任务发送时触发
     def btEngine_JobSentSlot(self, sender, event):
         self.eventSignal.emit(" ID :" + str(event.ID)+"\n"+"任务发送：" + event.Name + " "+event.Status+"\n")

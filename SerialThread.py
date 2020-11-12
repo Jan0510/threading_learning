@@ -9,7 +9,7 @@ from PyQt5.QtCore import pyqtSignal, QTimer, QObject
 
 class SerialThread(QObject):        # 需要继承QObject才可以使用QTimer
     # 在初始化函数__init__ 之前加入的就是自定义信号的申明,这个声明只能在初始化函数外面
-    dataReadoutSignal = pyqtSignal(int) # 输出信号，用于告知调用者，发送和接受情况
+    dataReadoutSignal = pyqtSignal(int) # 输出信号，用于告知连接状态
     def __init__(self):
         super(SerialThread, self).__init__()  # 分别调用了2个父类的初始化函数
         # 构造时不配置串口，打开时才配置
@@ -24,9 +24,12 @@ class SerialThread(QObject):        # 需要继承QObject才可以使用QTimer
         self.modbus_10resend_timer.timeout.connect(self.modbus_10resend_slot)
         self.modbus_10cmd_timeout = 100                 # ms，没收到10cmd的应答则重发
         self.sender_timer = QTimer(self)                # 主站轮询定时器
-        self.sender_timer.timeout.connect(self.sender_management_slot)
+        self.sender_timer.setSingleShot(False)          # singleShot=False
         self.sender_timer_timeout = 250                 # 主站固定时间轮询一次
-
+        self.sender_timer.timeout.connect(self.sender_management_slot)
+        self.if_alive_timer = QTimer(self)              # 检查连接是否存活
+        self.if_alive_timer_timeout = 3000
+        self.if_alive_timer.timeout.connect(self.connection_break_slot)
 
     # 串口检测
     def scan(self):
@@ -55,24 +58,23 @@ class SerialThread(QObject):        # 需要继承QObject才可以使用QTimer
             print(ex)
         if self.my_serial.isOpen():
             self.alive = True
-            self.thread_serial = threading.Thread(target=self.thread_loop)
+            self.thread_serial = threading.Thread(target=self.serial_thread_loop)
             self.thread_serial.setDaemon(True)        # setDaemon(True)，则为守护进程，主线程结束时，守护线程被强制结束
             self.thread_serial.start()
             return True
         else:
             return False
-    def thread_loop(self):
-        self.sender_timer.start(100)        # 启动轮询定时器，100ms
+    def serial_thread_loop(self):
+        self.sender_timer.start(self.sender_timer_timeout)        # 启动发送轮询定时器
         while self.alive:
             self.data_num = self.my_serial.inWaiting()
-            time.sleep(0.1)                         # 睡眠0.1秒
+            time.sleep(0.1)                         # 间隔0.1秒检查一次接收缓冲区
             try:
                 # 串口空闲原理：一段时间内num不增加，说明出现空闲时间，利用空闲时间分割2个数据帧
                 if self.data_num > 0 and self.data_num == self.my_serial.inWaiting():
                     self.read_buffer = self.my_serial.read(self.data_num)
                     self.modbus_Receive_Translate(self.read_buffer, self.data_num)
                     self.data_num = 0
-                    print('recv' + ' ' + time.strftime("%Y-%m-%d %X") + ' ' + str(self.read_buffer))
                 else:
                     self.data_num = self.my_serial.inWaiting()
             except Exception as ex:
@@ -81,6 +83,9 @@ class SerialThread(QObject):        # 需要继承QObject才可以使用QTimer
     # 串口停止
     def stop(self):
         self.alive = False
+        self.modbus_10cmd_wait = False
+        self.if_alive_timer.stop()
+        self.modbus_10resend_timer.stop()
         self.sender_timer.stop()
         self.thread_serial.join() # join方法主要是会阻塞主线程，在子线程结束运行前，主线程会被阻塞等待。
         if self.my_serial.isOpen():
@@ -133,6 +138,7 @@ class SerialThread(QObject):        # 需要继承QObject才可以使用QTimer
 
             # 串口接收到数据，发送信号给外部槽函数，功能码作为传递参数
             self.dataReadoutSignal.emit(data[1])
+            self.if_alive_timer.start(self.if_alive_timer_timeout)  # 监测到连接存活，重启连接定时器
         else:
             print("CRC_ERROR")
     def sender_management_slot(self):
@@ -140,22 +146,16 @@ class SerialThread(QObject):        # 需要继承QObject才可以使用QTimer
         if self.alive:
             # 如果轮询周期到，但还在等10cmd的应答，说明cmd10应答超时
             if self.modbus_10cmd_wait:
-                self.dataReadoutSignal.emit(0)      # 串口应答超时，发送信号给外部槽函数，0作为传递参数
-                self.sender_timer.stop()            # 主站轮询定时器关闭
-                self.modbus_10resend_timer.stop()   # 应答定时器关闭
-                self.modbus_10cmd_wait = False
-                print("cmd10应答超时")
+                self.dataReadoutSignal.emit(0xff)      # 串口应答超时
+                self.stop()
                 return
-            if global_maneger.get_global_value('send_to_PLC'):
-                # 把全局变量转移到modbus_reg数组中
-                self.move_global_value_to_modbus_reg()
-                self.modbus_send10cmd()
-            else:
-                self.modbus_send03cmd()
-            self.sender_timer.start(self.sender_timer_timeout)  # 再次启动轮询定时器，1ms
+            self.modbus_send03cmd()
+            # self.sender_timer.start(self.sender_timer_timeout)  # 再次启动轮询定时器，1ms
     def modbus_10resend_slot(self):
         # 10cmd应答超时，数据重发函数，被应答定时器触发
         if self.modbus_10cmd_wait:
+            # 重发时，从全局变量中取值，发送最新的消息
+            self.move_global_value_to_modbus_reg()
             self.modbus_send10cmd()
     def move_global_value_to_modbus_reg(self):
         # read-write寄存器
@@ -185,7 +185,19 @@ class SerialThread(QObject):        # 需要继承QObject才可以使用QTimer
         global_maneger.set_global_value('print_res_2', self.modbus_reg[16])
         global_maneger.set_global_value('recheck_res_1', self.modbus_reg[17])
         global_maneger.set_global_value('recheck_res_2', self.modbus_reg[18])
-
+    def connection_break_slot(self):
+        self.dataReadoutSignal.emit(0xff)
+        self.stop()
+    # 供外部函数调用，主动发送串口数据
+    def serial_api_sender_stage(self, stage):
+        if self.modbus_10cmd_wait:
+            return False
+        self.move_global_value_to_modbus_reg()
+        if stage == 'print':                      # 打印检测阶段
+            self.modbus_send10cmd(11, 6)    # 从寄存器11开始，连续发送6个
+        if stage == 'recheck':                      # 成品检测阶段
+            self.modbus_send10cmd(17, 2)
+        return True
 aucCRCLo = [
     0x00, 0xC0, 0xC1, 0x01, 0xC3, 0x03, 0x02, 0xC2, 0xC6, 0x06, 0x07, 0xC7, 0x05, 0xC5, 0xC4, 0x04, 0xCC,
     0x0C, 0x0D, 0xCD, 0x0F, 0xCF, 0xCE, 0x0E, 0x0A, 0xCA, 0xCB, 0x0B, 0xC9, 0x09, 0x08, 0xC8, 0xD8,
