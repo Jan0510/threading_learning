@@ -31,6 +31,12 @@ class Bartender(QObject):
         self.btEngine.JobSent += EventHandler(self.btEngine_JobSentSlot)
         self.btFormat = None
         self.btwfile_using = None
+    def __del__(self):
+        if self.btEngine.IsAlive:
+            # 停止引擎
+            self.btEngine.Stop()
+            # 释放资源
+            self.btEngine.Dispose()
     # 返回打印机列表[]
     def get_printer_list(self):
         printers = Printers()  # 获取打印机列表
@@ -39,18 +45,40 @@ class Bartender(QObject):
             printer_list.append(printer.PrinterName)
         printer_list.append(printers.Default.PrinterName)      # 最后再补充一个默认打印机
         return printer_list, printers.Default.PrinterName
-    def get_data_dict(self):
+    def get_data_dict(self, key=None):
         data_dict = {}
         if self.btFormat:
+            if key:
+                return self.btFormat.SubStrings[key].Value
             for substring in self.btFormat.SubStrings:
                 data_dict[substring.Name] = substring.Value
         return data_dict
     def set_data_dict(self, data_dict):
         if len(data_dict) and self.btFormat:
-            for key, value in data_dict:
+            for key, value in data_dict.items():
                 for substring in self.btFormat.SubStrings:
                     if substring.Name == key:
                         self.btFormat.SubStrings.SetSubString(key, value)
+    def get_substring_config(self, substring):
+        data_dict = {}
+        if self.btFormat:
+            # Substring类
+            data_dict['SerializeBy'] = self.btFormat.SubStrings[substring].SerializeBy  # 返回str
+            data_dict['SerializeEvery'] = self.btFormat.SubStrings[substring].SerializeEvery  # 返回str
+            # PrintSetup类
+            data_dict['NumberOfSerializedLabels'] = self.btFormat.PrintSetup.NumberOfSerializedLabels
+            data_dict['IdenticalCopiesOfLabel'] = self.btFormat.PrintSetup.IdenticalCopiesOfLabel
+        return data_dict
+    def set_substring_config(self, substring, data_dict):
+        if self.btFormat:
+            # Substring类
+            self.btFormat.SubStrings[substring].SerializeBy = data_dict['SerializeBy']
+            self.btFormat.SubStrings[substring].SerializeEvery = data_dict['SerializeEvery']
+            # PrintSetup类
+            self.btFormat.PrintSetup.NumberOfSerializedLabels = data_dict['NumberOfSerializedLabels']
+            self.btFormat.PrintSetup.IdenticalCopiesOfLabel = data_dict['IdenticalCopiesOfLabel']
+            return True
+        return False
     def set_btwfile_using(self, new_btwfile_name):
         # 不能重复打开
         if new_btwfile_name and self.btwfile_using == new_btwfile_name:
@@ -117,9 +145,4 @@ class Bartender(QObject):
     def btEngine_JobQueuedSlot(self, sender, event):
         self.eventSignal.emit(" ID :" + str(event.ID)+"\n"+"任务入列：" + event.Name + " "+event.Status+"\n")
 
-    def __del__(self):
-        if self.btEngine.IsAlive:
-            # 停止引擎
-            self.btEngine.Stop()
-            # 释放资源
-            self.btEngine.Dispose()
+
