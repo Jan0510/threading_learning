@@ -5,6 +5,8 @@
 
 '''全局变量表
 '''
+from queue import Queue
+
 _global_dict = {}
 
 def global_maneger_init():  # 初始化
@@ -24,6 +26,14 @@ def global_maneger_init():  # 初始化
     _global_dict['recheck_res_2'] = 0
     _global_dict['serial_connect'] = False
     # 2 与mes系统通信相关变量
+    '''
+    {
+    "SERIAL_NUMBER": null,
+    "FUNCTION_NAME": "FSBB100360B03",
+    "TARGET_QTY": 1000,
+    "SN_QTY": 0,
+    "PARAME_VALUE": "EASTECH FSBB10036-0B03 YYWWKSSSSS"
+    '''
     _global_dict['mes_login'] = False
     _global_dict['mes_doing_push_work_order'] = False
     _global_dict['FUNCTION_NAME']=0
@@ -38,6 +48,13 @@ def global_maneger_init():  # 初始化
     _global_dict['print_check_NG_num'] = 0
     _global_dict['recheck_OK_num'] = 0
     _global_dict['recheck_NG_num'] = 0
+    # 4 与图像处理函数相关
+    _global_dict['cv_api_1_res'] = 0
+    _global_dict['cv_api_2_res'] = 0
+    _global_dict['cv_api_3_res'] = 0
+    # SN码的FIFO队列, 打印检测阶段入队， 成品检测阶段出队
+    _global_dict['queue_SN_1'] = Queue()
+    _global_dict['queue_SN_2'] = Queue()
 def set_global_value(key, value):
     """ 定义一个全局变量 """
     global _global_dict
@@ -50,3 +67,11 @@ def get_global_value(key, defValue=None):
         return _global_dict[key]
     except KeyError:
         return defValue
+
+if __name__ == '__main__':
+    # global_maneger_init()
+    # set_global_value('queue_SN_1', Queue())
+    # print(get_global_value('queue_SN_1'))
+    # get_global_value('queue_SN_1').put("123")
+    # print( get_global_value('queue_SN_1').queue)
+    pass

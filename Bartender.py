@@ -43,7 +43,6 @@ class Bartender(QObject):
         printer_list = []
         for printer in printers:
             printer_list.append(printer.PrinterName)
-        printer_list.append(printers.Default.PrinterName)      # 最后再补充一个默认打印机
         return printer_list, printers.Default.PrinterName
     def get_data_dict(self, key=None):
         data_dict = {}
@@ -97,22 +96,21 @@ class Bartender(QObject):
     def close_btwfile(self):
         if self.btFormat:
             self.btFormat.Close(SaveOptions.SaveChanges)
+            self.btFormat = None
     def my_print(self, printer):             # 返回nResult，0=成功，1=失败
         # 判断bartender是否启动
         if self.btEngine.IsAlive:
             pass
         else:
             self.btEngine.Start()
-        btMessages = Messages()                 # 打印返回的消息
-        waitForCompletionTimeout = 100          # 打印超时定时器 ms
         try:                                    # 开始打印
             self.btFormat.PrintSetup.PrinterName = printer
             # 调用库的打印函数，将数据推入打印队列
-            nResult = self.btFormat.Print("printjob", waitForCompletionTimeout, btMessages)
-            return int(nResult)                      # 0=成功，1=失败
+            nResult = self.btFormat.Print("printjob")
+            return nResult                    # 0=成功，1=超时，2=失败
         except Exception as ex:
             print(ex)
-            return 1
+            return 2
     # 任务发送时触发
     def btEngine_JobSentSlot(self, sender, event):
         self.eventSignal.emit(" ID :" + str(event.ID)+"\n"+"任务发送：" + event.Name + " "+event.Status+"\n")

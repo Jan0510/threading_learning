@@ -66,7 +66,7 @@ class SerialThread(QObject):        # 需要继承QObject才可以使用QTimer
                 # 开resend定时器
                 self.modbus_resend_timer = QTimer()  # 重发定时器
                 self.modbus_resend_timer.timeout.connect(self.modbus_resend_slot)
-                self.modbus_resend_timeout = 100  # ms
+                self.modbus_resend_timeout = 200  # ms
                 # 开子线程，只负责串口接收和发送,daemon=True，则为守护进程，主线程结束时，守护线程被强制结束
                 self.serial_receiever_thread = threading.Thread(target=self.serial_receiever_thread_loop, daemon=True)
                 self.serial_receiever_thread.start()
@@ -126,13 +126,13 @@ class SerialThread(QObject):        # 需要继承QObject才可以使用QTimer
         num = self.my_serial.write(send_buf)      # 串口写并返回字节数
         self.modbus_03cmd_wait = True  # 等待应答标志位
     def modbus_06cmd_format(self, start_addr, reg_value):
-        send_buf = bytearray(10)  # 返回一个长度为 10 的初始化数组
+        send_buf = bytearray(8)  # 返回一个长度为 8 的初始化数组
         send_buf[0] = 0x01  # 地址
         send_buf[1] = 0x06  # 功能码
         send_buf[2] = start_addr // 256  # startaddr
         send_buf[3] = start_addr % 256  # startaddr
-        send_buf[4] = reg_value // 256  # number
-        send_buf[5] = reg_value % 256  # number
+        send_buf[4] = reg_value // 256  #
+        send_buf[5] = reg_value % 256  #
         crc16 = getcrc16(send_buf, 6)
         send_buf[6] = crc16 // 256
         send_buf[7] = crc16 % 256
@@ -156,14 +156,13 @@ class SerialThread(QObject):        # 需要继承QObject才可以使用QTimer
         # 只当执行到modbus_Receive_Translate函数时才会创建，并作为实例变量一直存在
         data_crc = data[length-2]*256+data[length-1]
         if data[0] == 0x01 and data_crc == getcrc16(data, length-2):
-            if data[1] == 0x03:         # 03 功能码，读
+            if data[1] == 0x03 and self.modbus_03cmd_wait:         # 03 功能码，读
                 self.modbus_03cmd_wait = False
                 reg_num = data[2]       # 字节数目
-                for i in range(0, reg_num//2):  # 0-99只读，把数据填入modbus_reg队列
-                    self.modbus_reg[i] = data[3+i*2]*256 + data[4+i*2]
+                for i in range(0, reg_num//2):  # 把数据填入modbus_reg队列
+                    self.modbus_reg[1+i] = data[3+i*2]*256 + data[4+i*2]
                 # 把modbus_reg数组转移到全局变量中
                 self.move_modbus_reg_to_global_value()
-                print("收到03")
             elif data[1] == 0x06:
                 # 写命令的应答只要CRC通过就行
                 self.modbus_resend_timer.stop()  # 关闭定时器
@@ -209,39 +208,35 @@ class SerialThread(QObject):        # 需要继承QObject才可以使用QTimer
                         return
                 else:
                     self.modbus_send03cmd()
-                    print("发送03报文")
                 # sender_threading = threading.Thread(target=self.modbus_send03cmd, daemon=True)
                 # sender_threading.start()
         except Exception as ex:
             print(ex)
     def modbus_resend_slot(self):
         # 应答超时，数据重发函数，需要重发的内容还存在send_buffer
-        print("应答超时")
-        print(self.send_buffer)
         if self.send_buffer[1] == 0x06:
             num = self.my_serial.write(self.send_buffer)  # 串口写并返回字节数
             self.modbus_resend_timer.start(self.modbus_resend_timeout)
-            self.modbus_06cmd_wait = True  # 等待应答标志位
-            print("06cmd重发！")
         elif self.send_buffer[1] == 0x10:
             num = self.my_serial.write(self.send_buffer)  # 串口写并返回字节数
             self.modbus_resend_timer.start(self.modbus_resend_timeout)
-            self.modbus_10cmd_wait = True  # 等待应答标志位
-            print("10cmd重发！")
     def move_modbus_reg_to_global_value(self):
-        # read-write寄存器
+        # status_print 寄存器 0x0001
         global_maneger.set_global_value('status_print', self.modbus_reg[1])
+        # status_recheck 寄存器 0x0002
         global_maneger.set_global_value('status_recheck', self.modbus_reg[2])
-        global_maneger.set_global_value('cmd_mode', self.modbus_reg[3])
+        # global_maneger.set_global_value('cmd_mode', self.modbus_reg[3])
     def connection_break_slot(self):
         if not self.if_connected:
             print("检查串口连接超时，已断开")
-            self.dataReadoutSignal.emit(0xff)
             self.stop()
+            self.dataReadoutSignal.emit(0xff)
+
         else:
             self.if_connected = False
     # 供外部函数调用，将数据打包进发送缓冲队列
     def serial_api_sender_stage(self, reg_num, addr, value):
+        self.modbus_03cmd_wait = False
         if reg_num == 1:
             buff = self.modbus_06cmd_format(addr, value)
         else:

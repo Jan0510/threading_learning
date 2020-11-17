@@ -30,7 +30,10 @@ def web_post(SN):
     webapi_token = global_maneger.get_global_value("token")
     headers = {'Authorization': webapi_token}
     try:
-        response = requests.request("POST", url, headers=headers, data=payload, files=files, timeout=1)
+        print(url)
+        print(headers)
+        print(payload)
+        response = requests.request("POST", url, headers=headers, json=payload, files=files, timeout=1)
         if response.text.find("OK") > 0:
             return True
         else:
