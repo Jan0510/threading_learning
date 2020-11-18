@@ -9,10 +9,8 @@ from datetime import datetime
 import os
 import sys
 import threading
-
 from PyQt5.QtGui import QTextCursor
 from PyQt5.QtWidgets import QApplication, QWidget, QMessageBox, QInputDialog, QLineEdit
-
 import global_maneger
 import webapi
 from Bartender import Bartender
@@ -535,7 +533,7 @@ class MyUi(QWidget, Ui_Form, QObject):
             # SN模板读取出来
             SN_template = global_maneger.get_global_value('PARAME_VALUE')
             sections = SN_template.split()   # 将字符串按空格分段，返回字段列表，第一段是公司logo，第2段是产品料号
-            original_SN = sections[0] + ' ' + sections[1] + ' ' + y + w + d + "00001"
+            original_SN = SN_template[0: len(SN_template)-5] + ' ' + y + w + d + "00001"
             self.my_log_print("SN为空，已生成SN：" + '\n' + str(original_SN))
         else:
             sections = original_SN.split()

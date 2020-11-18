@@ -222,9 +222,11 @@ class SerialThread(QObject):        # 需要继承QObject才可以使用QTimer
             self.modbus_resend_timer.start(self.modbus_resend_timeout)
     def move_modbus_reg_to_global_value(self):
         # status_print 寄存器 0x0001
-        global_maneger.set_global_value('status_print', self.modbus_reg[1])
+        if self.modbus_reg[1] == 1:
+            global_maneger.set_global_value('status_print', self.modbus_reg[1])
         # status_recheck 寄存器 0x0002
-        global_maneger.set_global_value('status_recheck', self.modbus_reg[2])
+        if self.modbus_reg[2] == 1:
+            global_maneger.set_global_value('status_recheck', self.modbus_reg[2])
         # global_maneger.set_global_value('cmd_mode', self.modbus_reg[3])
     def connection_break_slot(self):
         if not self.if_connected:
