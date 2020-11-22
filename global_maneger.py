@@ -55,6 +55,8 @@ def global_maneger_init():  # 初始化
     # SN码的FIFO队列, 打印检测阶段入队， 成品检测阶段出队
     _global_dict['queue_SN_1'] = Queue()
     _global_dict['queue_SN_2'] = Queue()
+    # 5 与打印任务相关
+    _global_dict['JobSent'] = False
 def set_global_value(key, value):
     """ 定义一个全局变量 """
     global _global_dict

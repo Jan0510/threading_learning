@@ -97,7 +97,7 @@ class Bartender(QObject):
         if self.btFormat:
             self.btFormat.Close(SaveOptions.SaveChanges)
             self.btFormat = None
-    def my_print(self, printer):             # 返回nResult，0=成功，1=失败
+    def my_print(self, printer, timeout=2000):             # 返回nResult，0=成功，1=失败
         # 判断bartender是否启动
         if self.btEngine.IsAlive:
             pass
@@ -106,7 +106,7 @@ class Bartender(QObject):
         try:                                    # 开始打印
             self.btFormat.PrintSetup.PrinterName = printer
             # 调用库的打印函数，将数据推入打印队列
-            nResult = self.btFormat.Print("printjob")
+            nResult = self.btFormat.Print("printjob", timeout)
             return nResult                    # 0=成功，1=超时，2=失败
         except Exception as ex:
             print(ex)
