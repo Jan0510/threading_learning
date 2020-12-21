@@ -1,16 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="4c946fde-85e0-46e8-860f-f81ed672c332" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/SerialThread.py" beforeDir="false" afterPath="$PROJECT_DIR$/SerialThread.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/btw/FSBB100360B03.btw" beforeDir="false" afterPath="$PROJECT_DIR$/btw/FSBB100360B03.btw" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cv_process.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/global_maneger.py" beforeDir="false" afterPath="$PROJECT_DIR$/global_maneger.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/testUI.py" beforeDir="false" afterPath="$PROJECT_DIR$/testUI.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/testUI.ui" beforeDir="false" afterPath="$PROJECT_DIR$/testUI.ui" afterDir="false" />
-    </list>
+    <list default="true" id="4c946fde-85e0-46e8-860f-f81ed672c332" name="Default Changelist" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
