@@ -20,8 +20,23 @@ class SerialThread(QObject):        # 需要继承QObject才可以使用QTimer
         self.prepare_buffer = Queue()
         self.send_buffer = []
         self.read_buffer = []
+        self.data_num = 0
         self.alive = False              # 串口工作标志，供多个子线程访问
         self.modbus_reg = [0]*21            # 索引+1对应于modbus寄存器地址
+        self.modbus_resend_timer = QTimer()  # 重发定时器
+        self.modbus_resend_timer.timeout.connect(self.modbus_resend_slot)
+        self.if_alive_timer = QTimer()  # 检查连接是否存活
+        self.if_alive_timer.setSingleShot(False)  # singleShot=False
+        self.if_alive_timer.timeout.connect(self.connection_break_slot)
+        self.poll_timer = QTimer()  # 主站轮询定时器
+        self.poll_timer.setSingleShot(False)  # singleShot=False
+        self.poll_timer.timeout.connect(self.sender_poll_slot)
+        self.modbus_10cmd_wait = False
+        self.modbus_06cmd_wait = False
+        self.modbus_03cmd_wait = False
+        self.if_connected = False
+        # 只负责串口接收和发送,daemon=True，则为守护进程，主线程结束时，守护线程被强制结束
+        self.serial_receiever_thread = threading.Thread(target=self.serial_receiever_thread_loop, daemon=True)
 
     # 串口检测
     def scan(self):
@@ -49,26 +64,14 @@ class SerialThread(QObject):        # 需要继承QObject才可以使用QTimer
             self.modbus_03cmd_wait = False
             self.if_connected = False
             if not self.my_serial.isOpen():
+                self.alive = True
                 self.my_serial.open()
                 # 开poll定时器
-                self.poll_timer = QTimer()  # 主站轮询定时器
-                self.poll_timer.setSingleShot(False)  # singleShot=False
-                self.poll_timer_timeout = 500  # 主站固定时间轮询一次
-                self.poll_timer.timeout.connect(self.sender_poll_slot)
-                self.poll_timer.start(self.poll_timer_timeout)  # 启动发送轮询定时器
+                self.poll_timer.start(500)  # 启动发送轮询定时器
                 # 开if_alive定时器
-                self.if_alive_timer = QTimer()  # 检查连接是否存活
-                self.if_alive_timer.setSingleShot(False)  # singleShot=False
-                self.if_alive_timer_timeout = 3000  # ms
-                self.if_alive_timer.timeout.connect(self.connection_break_slot)
-                self.if_alive_timer.start(self.if_alive_timer_timeout)
-                self.alive = True
+                self.if_alive_timer.start(3000)
                 # 开resend定时器
-                self.modbus_resend_timer = QTimer()  # 重发定时器
-                self.modbus_resend_timer.timeout.connect(self.modbus_resend_slot)
-                self.modbus_resend_timeout = 200  # ms
-                # 开子线程，只负责串口接收和发送,daemon=True，则为守护进程，主线程结束时，守护线程被强制结束
-                self.serial_receiever_thread = threading.Thread(target=self.serial_receiever_thread_loop, daemon=True)
+                # 开子线程
                 self.serial_receiever_thread.start()
                 return True
             else:
@@ -84,6 +87,7 @@ class SerialThread(QObject):        # 需要继承QObject才可以使用QTimer
                 # 串口空闲原理：一段时间内num不增加，说明出现空闲时间，利用空闲时间分割2个数据帧
                 if self.data_num > 0 and self.data_num == self.my_serial.inWaiting():
                     self.read_buffer = self.my_serial.read(self.data_num)
+                    # print("串口接收")
                     self.modbus_Receive_Translate(self.read_buffer, self.data_num)
                     # l = [hex(int(i)) for i in self.read_buffer]
                     # print(" ".join(l))
@@ -195,12 +199,12 @@ class SerialThread(QObject):        # 需要继承QObject才可以使用QTimer
                     self.send_buffer = self.prepare_buffer.get()        # get后队列的第一组数据就消失了
                     if self.send_buffer[1] == 0x06:
                         num = self.my_serial.write(self.send_buffer)  # 串口写并返回字节数
-                        self.modbus_resend_timer.start(self.modbus_resend_timeout)
+                        self.modbus_resend_timer.start(200)
                         self.modbus_06cmd_wait = True  # 等待应答标志位
                         print("发送06报文")
                     elif self.send_buffer[1] == 0x10:
                         num = self.my_serial.write(self.send_buffer)  # 串口写并返回字节数
-                        self.modbus_resend_timer.start(self.modbus_resend_timeout)
+                        self.modbus_resend_timer.start(200)
                         self.modbus_10cmd_wait = True  # 等待应答标志位
                         print("发送10报文")
                     else:
@@ -208,6 +212,7 @@ class SerialThread(QObject):        # 需要继承QObject才可以使用QTimer
                         return
                 else:
                     self.modbus_send03cmd()
+                    # print("发送03报文")
                 # sender_threading = threading.Thread(target=self.modbus_send03cmd, daemon=True)
                 # sender_threading.start()
         except Exception as ex:
@@ -216,18 +221,19 @@ class SerialThread(QObject):        # 需要继承QObject才可以使用QTimer
         # 应答超时，数据重发函数，需要重发的内容还存在send_buffer
         if self.send_buffer[1] == 0x06:
             num = self.my_serial.write(self.send_buffer)  # 串口写并返回字节数
-            self.modbus_resend_timer.start(self.modbus_resend_timeout)
+            self.modbus_resend_timer.start(200)
         elif self.send_buffer[1] == 0x10:
             num = self.my_serial.write(self.send_buffer)  # 串口写并返回字节数
-            self.modbus_resend_timer.start(self.modbus_resend_timeout)
+            self.modbus_resend_timer.start(200)
     def move_modbus_reg_to_global_value(self):
         # status_print 寄存器 0x0001
-        if self.modbus_reg[1] == 1:
+        if self.modbus_reg[1] == 0 or self.modbus_reg[1] == 10:
             global_maneger.set_global_value('status_print', self.modbus_reg[1])
         # status_recheck 寄存器 0x0002
-        if self.modbus_reg[2] == 1:
+        if self.modbus_reg[1] == 0 or self.modbus_reg[2] == 10 or self.modbus_reg[2] == 35:
             global_maneger.set_global_value('status_recheck', self.modbus_reg[2])
-        # global_maneger.set_global_value('cmd_mode', self.modbus_reg[3])
+        global_maneger.set_global_value('product_1', self.modbus_reg[4])
+        global_maneger.set_global_value('product_2', self.modbus_reg[5])
     def connection_break_slot(self):
         if not self.if_connected:
             print("检查串口连接超时，已断开")

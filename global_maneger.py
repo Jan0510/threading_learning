@@ -19,12 +19,14 @@ def global_maneger_init():  # 初始化
     _global_dict['x_1'] = 0
     _global_dict['y_1'] = 0
     _global_dict['print_res_1'] = 0
+    _global_dict['QR_Code_1'] = ''
     _global_dict['x_2'] = 0
     _global_dict['y_2'] = 0
     _global_dict['print_res_2'] = 0
+    _global_dict['QR_Code_2'] = ''
     _global_dict['recheck_res_1'] = 0
     _global_dict['recheck_res_2'] = 0
-    _global_dict['serial_connect'] = False
+
     # 2 与mes系统通信相关变量
     '''
     {
@@ -51,12 +53,20 @@ def global_maneger_init():  # 初始化
     # 4 与图像处理函数相关
     _global_dict['cv_api_1_res'] = 0
     _global_dict['cv_api_2_res'] = 0
-    _global_dict['cv_api_3_res'] = 0
     # SN码的FIFO队列, 打印检测阶段入队， 成品检测阶段出队
     _global_dict['queue_SN_1'] = Queue()
     _global_dict['queue_SN_2'] = Queue()
     # 5 与打印任务相关
     _global_dict['JobSent'] = False
+    # 6 运行前检查状态量
+    _global_dict['check_before_run_start'] = False
+    _global_dict['serial_connect_done'] = False
+    _global_dict['cv_tcp_connect_done'] = False
+    _global_dict['mes_login_done'] = False
+    _global_dict['mes_push_work_order_done'] = False
+
+
+
 def set_global_value(key, value):
     """ 定义一个全局变量 """
     global _global_dict

@@ -1,7 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="4c946fde-85e0-46e8-860f-f81ed672c332" name="Default Changelist" comment="" />
+    <list default="true" id="4c946fde-85e0-46e8-860f-f81ed672c332" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/SerialThread.py" beforeDir="false" afterPath="$PROJECT_DIR$/SerialThread.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/btw/FSBB100360B03.btw" beforeDir="false" afterPath="$PROJECT_DIR$/btw/FSBB100360B03.btw" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cv_process.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/global_maneger.py" beforeDir="false" afterPath="$PROJECT_DIR$/global_maneger.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/testUI.py" beforeDir="false" afterPath="$PROJECT_DIR$/testUI.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/testUI.ui" beforeDir="false" afterPath="$PROJECT_DIR$/testUI.ui" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -104,7 +113,7 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="global_maneger" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+    <configuration name="main (1)" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="threading_learning" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -112,11 +121,11 @@
         <env name="PYTHONUNBUFFERED" value="1" />
       </envs>
       <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/../BarTender_learning" />
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/global_maneger.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/../BarTender_learning/main.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -170,10 +179,10 @@
     <recent_temporary>
       <list>
         <item itemvalue="Python.main" />
-        <item itemvalue="Python.webapi" />
-        <item itemvalue="Python.global_maneger" />
         <item itemvalue="Python.SerialThread" />
         <item itemvalue="Python.Bartender" />
+        <item itemvalue="Python.main (1)" />
+        <item itemvalue="Python.webapi" />
       </list>
     </recent_temporary>
   </component>
@@ -199,31 +208,31 @@
       <screen x="0" y="0" width="1366" height="728" />
     </state>
     <state x="413" y="109" key="#com.intellij.refactoring.safeDelete.UnsafeUsagesDialog/0.0.1366.728@0.0.1366.728" timestamp="1605580783538" />
-    <state x="448" y="118" key="FileChooserDialogImpl" timestamp="1604555363471">
+    <state x="448" y="118" key="FileChooserDialogImpl" timestamp="1606823650015">
       <screen x="0" y="0" width="1366" height="728" />
     </state>
     <state x="420" y="118" key="FileChooserDialogImpl/0.0.1280.728@0.0.1280.728" timestamp="1604048854655" />
-    <state x="448" y="118" key="FileChooserDialogImpl/0.0.1366.728@0.0.1366.728" timestamp="1604555363471" />
-    <state width="1344" height="105" key="GridCell.Tab.0.bottom" timestamp="1606024769962">
+    <state x="448" y="118" key="FileChooserDialogImpl/0.0.1366.728@0.0.1366.728" timestamp="1606823650015" />
+    <state width="1344" height="146" key="GridCell.Tab.0.bottom" timestamp="1606988789186">
       <screen x="0" y="0" width="1366" height="728" />
     </state>
     <state width="1322" height="86" key="GridCell.Tab.0.bottom/0.0.1366.728/-1440.-132.1440.900@0.0.1366.728" timestamp="1604928937630" />
-    <state width="1344" height="105" key="GridCell.Tab.0.bottom/0.0.1366.728@0.0.1366.728" timestamp="1606024769962" />
-    <state width="1344" height="105" key="GridCell.Tab.0.center" timestamp="1606024769962">
+    <state width="1344" height="146" key="GridCell.Tab.0.bottom/0.0.1366.728@0.0.1366.728" timestamp="1606988789186" />
+    <state width="1344" height="146" key="GridCell.Tab.0.center" timestamp="1606988789186">
       <screen x="0" y="0" width="1366" height="728" />
     </state>
     <state width="1322" height="86" key="GridCell.Tab.0.center/0.0.1366.728/-1440.-132.1440.900@0.0.1366.728" timestamp="1604928937630" />
-    <state width="1344" height="105" key="GridCell.Tab.0.center/0.0.1366.728@0.0.1366.728" timestamp="1606024769962" />
-    <state width="1344" height="105" key="GridCell.Tab.0.left" timestamp="1606024769962">
+    <state width="1344" height="146" key="GridCell.Tab.0.center/0.0.1366.728@0.0.1366.728" timestamp="1606988789186" />
+    <state width="1344" height="146" key="GridCell.Tab.0.left" timestamp="1606988789186">
       <screen x="0" y="0" width="1366" height="728" />
     </state>
     <state width="1322" height="86" key="GridCell.Tab.0.left/0.0.1366.728/-1440.-132.1440.900@0.0.1366.728" timestamp="1604928937629" />
-    <state width="1344" height="105" key="GridCell.Tab.0.left/0.0.1366.728@0.0.1366.728" timestamp="1606024769962" />
-    <state width="1344" height="105" key="GridCell.Tab.0.right" timestamp="1606024769962">
+    <state width="1344" height="146" key="GridCell.Tab.0.left/0.0.1366.728@0.0.1366.728" timestamp="1606988789186" />
+    <state width="1344" height="146" key="GridCell.Tab.0.right" timestamp="1606988789186">
       <screen x="0" y="0" width="1366" height="728" />
     </state>
     <state width="1322" height="86" key="GridCell.Tab.0.right/0.0.1366.728/-1440.-132.1440.900@0.0.1366.728" timestamp="1604928937630" />
-    <state width="1344" height="105" key="GridCell.Tab.0.right/0.0.1366.728@0.0.1366.728" timestamp="1606024769962" />
+    <state width="1344" height="146" key="GridCell.Tab.0.right/0.0.1366.728@0.0.1366.728" timestamp="1606988789186" />
     <state width="1344" height="216" key="GridCell.Tab.1.bottom" timestamp="1604565561268">
       <screen x="0" y="0" width="1366" height="728" />
     </state>
