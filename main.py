@@ -309,6 +309,7 @@ class MyUi(QWidget, Ui_Form, QObject):
         print("运行前检查完成")
         self.my_log_print("运行前检查：通过！")
         print("Computer_ready = "+str(global_maneger.get_global_value('Computer_ready')))
+        # 启动2个子线程待命
         self.stage_print_active = True
         self.stage_print_thread = threading.Thread(target=self.stage_print_thread_loop, daemon=True)
         self.stage_print_thread.start()
@@ -378,7 +379,9 @@ class MyUi(QWidget, Ui_Form, QObject):
                         print('global_SN:'+str(global_current_SN))
                         self.bartender.set_data_dict({'num': global_current_SN})
                     # 1.2 打印，打印出来的SN是用的btw里的current_SN
-                    res = self.bartender.my_print(self.PrintersList.currentText(), 5000)
+                    # res = self.bartender.my_print(self.PrintersList.currentText(), 5000)
+                    res = 0
+                    global_maneger.set_global_value('jobSent', True)
                     if res == 0:
                         # 1.3 等待jobSent事件被触发，才说明打印完成
                         while not global_maneger.get_global_value('JobSent'):
@@ -417,70 +420,55 @@ class MyUi(QWidget, Ui_Form, QObject):
                         time.sleep(0.5)
                     global_maneger.set_global_value('cv_api_1_res', 0)
 
-                    # 2.3 打印检测后，比较SN码是否匹配。更新成功、失败计数，然后显示在UI。
+                    # 2.3 打印检测后，比较SN码是否匹配。
                     self.my_log_print("打印后检测完成，现在更新打印检测成功、失败计数")
                     if SN_1 == global_maneger.get_global_value('QR_Code_1'):
-                        global_maneger.set_global_value('print_res_1', 0x3159)   # 正确为1
-                        num = global_maneger.get_global_value('print_check_OK_num')
-                        global_maneger.set_global_value('print_check_OK_num', num + 1)
-                        self.print_check_OK_num.setText(str(global_maneger.get_global_value('print_check_OK_num')))
+                        global_maneger.set_global_value('print_res_1', 0x3159)   # 正确
                         global_maneger.get_global_value('queue_SN_1').put(SN_1)
                     elif 'DEBUGING_OK' == global_maneger.get_global_value('QR_Code_1'):
-                        global_maneger.set_global_value('print_res_1', 0x3159)  # 正确为1
-                        num = global_maneger.get_global_value('print_check_OK_num')
-                        global_maneger.set_global_value('print_check_OK_num', num + 1)
-                        self.print_check_OK_num.setText(str(global_maneger.get_global_value('print_check_OK_num')))
+                        global_maneger.set_global_value('print_res_1', 0x3159)  # 正确
                         global_maneger.get_global_value('queue_SN_1').put(SN_1)
                     elif 'DEBUGING_NG' == global_maneger.get_global_value('QR_Code_1'):
-                        global_maneger.set_global_value('print_res_1', 0x314E)  # 错误为2
-                        num = global_maneger.get_global_value('print_check_NG_num')
-                        global_maneger.set_global_value('print_check_NG_num', num + 1)
-                        self.print_check_NG_num.setText(str(global_maneger.get_global_value('print_check_NG_num')))
+                        global_maneger.set_global_value('print_res_1', 0x314E)  # 错误
                         global_maneger.get_global_value('queue_SN_1').put('NG')  # 错误时SN码用'NG'
                     else:
                         global_maneger.set_global_value('print_res_1', 0x314E)   # 错误为2
-                        num = global_maneger.get_global_value('print_check_NG_num')
-                        global_maneger.set_global_value('print_check_NG_num', num + 1)
-                        self.print_check_NG_num.setText(str(global_maneger.get_global_value('print_check_NG_num')))
                         global_maneger.get_global_value('queue_SN_1').put('NG') # 错误时SN码用'NG'
-
                     if SN_2 == global_maneger.get_global_value('QR_Code_2'):
                         global_maneger.set_global_value('print_res_2', 0x3259)
-                        num = global_maneger.get_global_value('print_check_OK_num')
-                        global_maneger.set_global_value('print_check_OK_num', num + 1)
-                        self.print_check_OK_num.setText(str(global_maneger.get_global_value('print_check_OK_num')))
                         global_maneger.get_global_value('queue_SN_2').put(SN_2)
                     elif 'DEBUGING_OK' == global_maneger.get_global_value('QR_Code_2'):
                         global_maneger.set_global_value('print_res_2', 0x3259)
-                        num = global_maneger.get_global_value('print_check_OK_num')
-                        global_maneger.set_global_value('print_check_OK_num', num + 1)
-                        self.print_check_OK_num.setText(str(global_maneger.get_global_value('print_check_OK_num')))
                         global_maneger.get_global_value('queue_SN_2').put(SN_2)
                     elif 'DEBUGING_NG' == global_maneger.get_global_value('QR_Code_2'):
                         global_maneger.set_global_value('print_res_2', 0x324E)
-                        num = global_maneger.get_global_value('print_check_OK_num')
-                        global_maneger.set_global_value('print_check_OK_num', num + 1)
-                        self.print_check_OK_num.setText(str(global_maneger.get_global_value('print_check_OK_num')))
-                        global_maneger.get_global_value('queue_SN_2').put(SN_2)
+                        global_maneger.get_global_value('queue_SN_2').put('NG')
                     else:
                         global_maneger.set_global_value('print_res_2', 0x324E)
-                        num = global_maneger.get_global_value('print_check_NG_num')
-                        global_maneger.set_global_value('print_check_NG_num', num + 1)
-                        self.print_check_NG_num.setText(str(global_maneger.get_global_value('print_check_NG_num')))
                         global_maneger.get_global_value('queue_SN_2').put('NG')  # 错误时SN码用'NG'
-                    # 2.4 调用串口发送api，把检测结果发送给下位机
-                    data = [0] * 4
-                    data[0] = int(global_maneger.get_global_value('print_res_1'))
-                    data[1] = int(global_maneger.get_global_value('print_res_2'))
-                    data[2] = int(global_maneger.get_global_value('x'))
-                    data[3] = int(global_maneger.get_global_value('y'))
-                    self.my_serial.serial_api_sender_stage(reg_num=1, addr=C_B2, value=int(global_maneger.get_global_value('print_res_1')))  # 等待串口发送
-                    self.my_serial.serial_api_sender_stage(reg_num=1, addr=C_B3, value=int(global_maneger.get_global_value('print_res_2')))  # 等待串口发送
+                    # 2.4 更新成功、失败计数，然后显示在UI
+                    if 0x314E == global_maneger.get_global_value('print_res_1') or 0x324E == global_maneger.get_global_value('print_res_2'):
+                        # 只要有一个打印结果不好的，就都不要了
+                        try:
+                            global_maneger.get_global_value('queue_SN_1').get()
+                            global_maneger.get_global_value('queue_SN_2').get()
+                            num = global_maneger.get_global_value('print_check_NG_num')
+                            global_maneger.set_global_value('print_check_NG_num', num + 2)
+                            self.print_check_OK_num.setText(str(global_maneger.get_global_value('print_check_NG_num')))
+                        except Exception as ex:
+                            print(ex)
+                    else:
+                        num = global_maneger.get_global_value('print_check_OK_num')
+                        global_maneger.set_global_value('print_check_OK_num', num + 2)
+                        self.print_check_OK_num.setText(str(global_maneger.get_global_value('print_check_OK_num')))
+                    # 2.5 调用串口发送api，把检测结果发送给下位机
+                    self.my_serial.serial_api_sender_stage(reg_num=1, addr=C_B2, value=global_maneger.get_global_value('print_res_1'))  # 等待串口发送
+                    self.my_serial.serial_api_sender_stage(reg_num=1, addr=C_B3, value=global_maneger.get_global_value('print_res_2'))  # 等待串口发送
                     self.my_serial.serial_api_sender_stage(reg_num=1, addr=C_B4, value=int(global_maneger.get_global_value('x')))  # 等待串口发送
                     self.my_serial.serial_api_sender_stage(reg_num=1, addr=C_B5, value=int(global_maneger.get_global_value('y')))  # 等待串口发送
                     self.my_serial.serial_api_sender_stage(reg_num=1, addr=C_B1, value=0x4c46)  # 等待串口发送
                     global_maneger.set_global_value('P_print_cmd', 30)
-                    print("2.3 调用串口发送api，把检测结果发送给下位机")
+                    print("2.5 调用串口发送api，把检测结果发送给下位机")
                 except Exception as ex:
                     print(ex)
             elif stage_print_status == 30:
@@ -546,7 +534,7 @@ class MyUi(QWidget, Ui_Form, QObject):
                 elif 0x314E == global_maneger.get_global_value('product_1'):
                     num = global_maneger.get_global_value('recheck_NG_num')
                     global_maneger.set_global_value('recheck_NG_num', num + 1)
-                    self.print_recheck_NG_num.setText(str(global_maneger.get_global_value('recheck_NG_num')))
+                    # self.recheck_NG_num.setText(str(global_maneger.get_global_value('recheck_NG_num')))
                     self.my_log_print("SN_1成品检测 NG +1！")
                 if 0x3259 == global_maneger.get_global_value('product_2'):
                     # 成品计数器+1
@@ -563,7 +551,7 @@ class MyUi(QWidget, Ui_Form, QObject):
                 elif 0x324E == global_maneger.get_global_value('product_2'):
                     num = global_maneger.get_global_value('recheck_NG_num')
                     global_maneger.set_global_value('recheck_NG_num', num + 1)
-                    self.recheck_NG_num.setText(str(global_maneger.get_global_value('recheck_NG_num')))
+                    # self.recheck_NG_num.setText(str(global_maneger.get_global_value('recheck_NG_num')))
                     self.my_log_print("SN_2成品检测 NG +1！")
                 # 5.工单与SN上传完成，等待新一轮命令
                 self.my_serial.serial_api_sender_stage(reg_num=1, addr=C_D1, value=0x5047)# 等待串口发送
@@ -903,6 +891,15 @@ class MyUi(QWidget, Ui_Form, QObject):
             print(ex)
     def warning_box_slot(self, msg):
         QMessageBox.warning(self, "警告", msg, QMessageBox.Ok)
+    def check_date_of_today(self):
+        ywd = datetime.now().isocalendar()  # (2020, 45, 7)tuple(年，周，日)
+        if global_maneger.get_global_value('today') != ywd[2]:
+            print("过了24点，进入新的一天")
+            global_maneger.set_global_value('today', ywd[2])
+            # 日期有变，返回False，需要更改SN码
+            return False
+        # 若日期没有变化，返回True
+        return True
 if __name__ == '__main__':
     try:
         app = QApplication(sys.argv)  # 实例化一个应用对象，sys.argv是一组命令行参数的列表。Python可以在shell里运行，这是一种通过参数来选择启动脚本的方式。

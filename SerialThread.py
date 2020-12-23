@@ -1,3 +1,4 @@
+from datetime import datetime
 from queue import Queue
 
 import serial.tools.list_ports
@@ -349,7 +350,9 @@ def getcrc16(frame, length): #传入要校验的数组名及其长度
 
 if __name__ == '__main__':
     try:
-        print(str(time.time()))
+        ywd = datetime.now().isocalendar()  # (2020, 45, 7)tuple(年，周，日)
+        print(ywd)
+        print(ywd[2])
     except Exception as ex:
         print(ex)
 
