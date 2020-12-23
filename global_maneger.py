@@ -59,7 +59,7 @@ def global_maneger_init():  # 初始化
     # 5 与打印任务相关
     _global_dict['JobSent'] = False
     # 6 运行前检查状态量
-    _global_dict['check_before_run_start'] = False
+    _global_dict['check_before_run_start_res'] = False
     _global_dict['serial_connect_done'] = False
     _global_dict['cv_tcp_connect_done'] = False
     _global_dict['mes_login_done'] = False

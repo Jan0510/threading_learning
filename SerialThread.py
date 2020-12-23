@@ -7,7 +7,26 @@ import global_maneger
 import time
 import serial
 from PyQt5.QtCore import pyqtSignal, QTimer, QObject
-
+# 开机时
+P_A1 = 101
+C_A1 = 109
+# 打印时
+P_B1 = 110
+C_B1 = 111
+C_B2 = 112
+C_B3 = 113
+C_B4 = 114
+C_B5 = 115
+# 下料前检查
+P_C1 = 100
+C_C1 = 99
+C_C2 = 102
+C_C3 = 103
+# 下料完成
+P_D1 = 104
+P_D2 = 105
+P_D3 = 106  # 5045
+C_D1 = 107  # 5047
 
 class SerialThread(QObject):        # 需要继承QObject才可以使用QTimer
     # 在初始化函数__init__ 之前加入的就是自定义信号的申明,这个声明只能在初始化函数外面
@@ -22,7 +41,6 @@ class SerialThread(QObject):        # 需要继承QObject才可以使用QTimer
         self.read_buffer = []
         self.data_num = 0
         self.alive = False              # 串口工作标志，供多个子线程访问
-        self.modbus_reg = [0]*21            # 索引+1对应于modbus寄存器地址
         self.modbus_resend_timer = QTimer()  # 重发定时器
         self.modbus_resend_timer.timeout.connect(self.modbus_resend_slot)
         self.if_alive_timer = QTimer()  # 检查连接是否存活
@@ -50,7 +68,9 @@ class SerialThread(QObject):        # 需要继承QObject才可以使用QTimer
             # "%s:%d"%("ab",3) => "ab:3"，%s表示格化式一个对象为字符串，%d表示整数。
         return self.com_dict
     # 在主线程中，开启子线程作为串口接收、发送
-    def start(self, port, baudrate=115200, bytesize=8, stopbits=1, parity='N', timeout=0):
+    def start(self, port, baudrate=9600, bytesize=8, stopbits=1, parity='N', timeout=0):
+        self.modbus_reg = [0]*200            # 索引+1对应于modbus寄存器地址
+        self.modbus_reg_last_value = [0]*200 # 保存旧值，用于计算上升沿
         self.my_serial.port = port       # 串口号
         self.my_serial.baudrate = baudrate   # 波特率
         self.my_serial.bytesize = bytesize   # 数据位
@@ -72,7 +92,10 @@ class SerialThread(QObject):        # 需要继承QObject才可以使用QTimer
                 self.if_alive_timer.start(3000)
                 # 开resend定时器
                 # 开子线程
-                self.serial_receiever_thread.start()
+                if not self.serial_receiever_thread.is_alive():
+                    self.serial_receiever_thread = self.serial_receiever_thread = threading.Thread(target=self.serial_receiever_thread_loop,
+                                                                    daemon=True)
+                    self.serial_receiever_thread.start()
                 return True
             else:
                 return False
@@ -87,10 +110,10 @@ class SerialThread(QObject):        # 需要继承QObject才可以使用QTimer
                 # 串口空闲原理：一段时间内num不增加，说明出现空闲时间，利用空闲时间分割2个数据帧
                 if self.data_num > 0 and self.data_num == self.my_serial.inWaiting():
                     self.read_buffer = self.my_serial.read(self.data_num)
-                    # print("串口接收")
+                    print("串口接收"+str(self.data_num)+"个字节")
                     self.modbus_Receive_Translate(self.read_buffer, self.data_num)
-                    # l = [hex(int(i)) for i in self.read_buffer]
-                    # print(" ".join(l))
+                    l = [hex(int(i)) for i in self.read_buffer]
+                    print(" ".join(l))
                     self.data_num = 0
                 else:
                     self.data_num = self.my_serial.inWaiting()
@@ -116,7 +139,7 @@ class SerialThread(QObject):        # 需要继承QObject才可以使用QTimer
         except Exception as ex:
             print(ex)
             return False
-    def modbus_send03cmd(self, start_addr=1, num=18):
+    def modbus_send03cmd(self, start_addr=90, num=30):
         send_buf = bytearray(8)#返回一个长度为 8 的初始化数组
         send_buf[0] = 0x01    #地址
         send_buf[1] = 0x03    #功能码
@@ -156,15 +179,15 @@ class SerialThread(QObject):        # 需要继承QObject才可以使用QTimer
         send_buf[8+num*2-2] = crc16 // 256
         send_buf[8+num*2-1] = crc16 % 256
         return send_buf
-    def modbus_Receive_Translate(self, data, length):
+    def modbus_Receive_Translate(self, data, length, addr = 90):
         # 只当执行到modbus_Receive_Translate函数时才会创建，并作为实例变量一直存在
         data_crc = data[length-2]*256+data[length-1]
         if data[0] == 0x01 and data_crc == getcrc16(data, length-2):
-            if data[1] == 0x03 and self.modbus_03cmd_wait:         # 03 功能码，读
+            if data[1] == 0x03:         # 03 功能码，读
                 self.modbus_03cmd_wait = False
                 reg_num = data[2]       # 字节数目
                 for i in range(0, reg_num//2):  # 把数据填入modbus_reg队列
-                    self.modbus_reg[1+i] = data[3+i*2]*256 + data[4+i*2]
+                    self.modbus_reg[addr+i] = data[3+i*2]*256 + data[4+i*2]
                 # 把modbus_reg数组转移到全局变量中
                 self.move_modbus_reg_to_global_value()
             elif data[1] == 0x06:
@@ -186,9 +209,9 @@ class SerialThread(QObject):        # 需要继承QObject才可以使用QTimer
         # 主站轮询函数，被轮询定时器触发
         try:
             if self.alive:
-                if self.modbus_03cmd_wait or self.modbus_06cmd_wait or self.modbus_10cmd_wait:
-                    if self.modbus_03cmd_wait:
-                        print("在等待03回复，不发送数据")
+                if self.modbus_06cmd_wait or self.modbus_10cmd_wait:
+                    # if self.modbus_03cmd_wait:
+                    #     print("在等待03回复，不发送数据")
                     if self.modbus_06cmd_wait:
                         print("在等待06回复，不发送数据")
                     if self.modbus_10cmd_wait:
@@ -219,27 +242,53 @@ class SerialThread(QObject):        # 需要继承QObject才可以使用QTimer
             print(ex)
     def modbus_resend_slot(self):
         # 应答超时，数据重发函数，需要重发的内容还存在send_buffer
-        if self.send_buffer[1] == 0x06:
+        if self.modbus_06cmd_wait == True:
             num = self.my_serial.write(self.send_buffer)  # 串口写并返回字节数
+            print("重发06")
             self.modbus_resend_timer.start(200)
-        elif self.send_buffer[1] == 0x10:
+        elif self.modbus_10cmd_wait == True:
             num = self.my_serial.write(self.send_buffer)  # 串口写并返回字节数
+            print("重发10")
             self.modbus_resend_timer.start(200)
     def move_modbus_reg_to_global_value(self):
-        # status_print 寄存器 0x0001
-        if self.modbus_reg[1] == 0 or self.modbus_reg[1] == 10:
-            global_maneger.set_global_value('status_print', self.modbus_reg[1])
-        # status_recheck 寄存器 0x0002
-        if self.modbus_reg[1] == 0 or self.modbus_reg[2] == 10 or self.modbus_reg[2] == 35:
-            global_maneger.set_global_value('status_recheck', self.modbus_reg[2])
-        global_maneger.set_global_value('product_1', self.modbus_reg[4])
-        global_maneger.set_global_value('product_2', self.modbus_reg[5])
+        # 1 开机阶段
+        if self.modbus_reg[P_A1] == 0x523f:
+            if self.modbus_reg_last_value[P_A1] != self.modbus_reg[P_A1]:
+                print('收到R?上升沿')
+                if global_maneger.get_global_value('Computer_ready'):
+                    # 2个子线程步骤号初始化+变量初始化+队列缓冲区初始化
+                    global_maneger.set_global_value('P_print_cmd', 0)
+                    global_maneger.set_global_value('P_recheck_cmd', 0)
+                    print('发送RD')
+                    self.serial_api_sender_stage(1, C_A1, 0x5244)
+                else:
+                    print('没有ready，不发送')
+                    # 在没有ready时，为了保留上升沿所以写0，下次读到时依旧会被判断成上升沿
+                    self.modbus_reg[P_A1] = 0
+        # 2 打印-检查阶段
+        if self.modbus_reg[P_B1] == 0x4c53:
+            if self.modbus_reg_last_value[P_B1] != self.modbus_reg[P_B1]:
+                print('收到LS上升沿')
+                global_maneger.set_global_value('P_print_cmd', 1)
+        # 3 下料-检查阶段
+        if self.modbus_reg[P_C1] == 0x4453:
+            if self.modbus_reg_last_value[P_C1] != self.modbus_reg[P_C1]:
+                print('收到DS上升沿')
+                global_maneger.set_global_value('P_recheck_cmd', 1)
+        # 4 下料-完成阶段
+        if self.modbus_reg[P_D3] == 0x5045:
+            if self.modbus_reg_last_value[P_D3] != self.modbus_reg[P_D3]:
+                print('收到PE上升沿')
+                global_maneger.set_global_value('P_recheck_cmd', 30)
+                global_maneger.set_global_value('product_1', self.modbus_reg[P_D1])
+                global_maneger.set_global_value('product_2', self.modbus_reg[P_D2])
+        for i in range(len(self.modbus_reg)):
+            self.modbus_reg_last_value[i] = self.modbus_reg[i]
     def connection_break_slot(self):
         if not self.if_connected:
             print("检查串口连接超时，已断开")
             self.stop()
             self.dataReadoutSignal.emit(0xff)
-
         else:
             self.if_connected = False
     # 供外部函数调用，将数据打包进发送缓冲队列
@@ -298,16 +347,9 @@ def getcrc16(frame, length): #传入要校验的数组名及其长度
         uchCRCLo = auchCRCLo[uIndex]
     return uchCRCHi*256 + uchCRCLo    #CRC校验返回值 // CRCHI向左移动，就是逆序计算的代表
 
-# if __name__ == '__main__':
-#     try:
-#         q = Queue()
-#         a = [1, 2, 3]
-#         b = [4, 5, 6]
-#         q.put(a)
-#         q.put(b)
-#         print(q.queue)
-#         print(q.get())
-#         print(q.queue)
-#     except Exception as ex:
-#         print(ex)
+if __name__ == '__main__':
+    try:
+        print(str(time.time()))
+    except Exception as ex:
+        print(ex)
 

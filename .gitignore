@@ -1,6 +1,6 @@
 Log/
 venv/
 build/
-__pycache/
+__pycache__/
 .idea/
 dist/
