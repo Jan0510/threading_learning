@@ -241,7 +241,6 @@ class SerialThread(QObject):        # 需要继承QObject才可以使用QTimer
         send_buf[8+num*2-2] = crc16 // 256
         send_buf[8+num*2-1] = crc16 % 256
         return send_buf
-
     def sender_poll_slot(self):
         # 主站轮询函数，被轮询定时器触发
         try:
@@ -311,6 +310,11 @@ class SerialThread(QObject):        # 需要继承QObject才可以使用QTimer
             if self.modbus_reg_last_value[P_B1] != self.modbus_reg[P_B1]:
                 print('收到LS上升沿')
                 global_maneger.set_global_value('P_print_cmd', 1)
+                # if global_maneger.get_global_value('P_print_first_flag'):
+                #     global_maneger.set_global_value('P_print_first_flag', False)
+                #     global_maneger.set_global_value('P_print_cmd', 50)
+                # else:
+                #     global_maneger.set_global_value('P_print_cmd', 1)
         # 3 下料-检查阶段
         if self.modbus_reg[P_C1] == 0x4453:
             if self.modbus_reg_last_value[P_C1] != self.modbus_reg[P_C1]:
@@ -392,7 +396,7 @@ if __name__ == '__main__':
     try:
         ywd = datetime.now().isocalendar()  # (2020, 45, 7)tuple(年，周，日)
         print(ywd)
-        print(ywd[2])
+        print(time.time())
     except Exception as ex:
         print(ex)
 
