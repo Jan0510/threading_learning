@@ -171,7 +171,7 @@ class Ui_Form(object):
         self.bnt_startAutoRun.setGeometry(QtCore.QRect(250, 210, 75, 23))
         self.bnt_startAutoRun.setObjectName("bnt_startAutoRun")
         self.bnt_stopAutoRun = QtWidgets.QPushButton(self.groupBox_4)
-        self.bnt_stopAutoRun.setEnabled(False)
+        self.bnt_stopAutoRun.setEnabled(True)
         self.bnt_stopAutoRun.setGeometry(QtCore.QRect(250, 240, 75, 23))
         self.bnt_stopAutoRun.setObjectName("bnt_stopAutoRun")
         self.bnt_connect_SCISmart = QtWidgets.QPushButton(self.groupBox_4)

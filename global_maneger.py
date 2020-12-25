@@ -15,6 +15,7 @@ def global_maneger_init():  # 初始化
     # 1 与下位机通信相关变量
     _global_dict['Computer_ready'] = False
     _global_dict['P_print_cmd'] = 0
+    _global_dict['P_print_first_flag'] = False
     _global_dict['P_recheck_cmd'] = 0
     _global_dict['x_1'] = 0
     _global_dict['y_1'] = 0

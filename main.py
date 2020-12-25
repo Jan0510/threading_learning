@@ -286,9 +286,7 @@ class MyUi(QWidget, Ui_Form, QObject):
                 print("step == 11")
                 # 10 等待mes连接完成
                 if global_maneger.get_global_value('mes_login_done'):
-
                     print("step == 12")
-
                     # 若未上传工单，则自动上传
                     self.my_log_print("运行前检查：检查是否已上传工单...")
                     if not global_maneger.get_global_value('mes_push_work_order_done'):
@@ -301,7 +299,7 @@ class MyUi(QWidget, Ui_Form, QObject):
                 time.sleep(1)
                 # 20 等待上传工单完成
                 if global_maneger.get_global_value('mes_push_work_order_done'):
-                    print("step == 2５")
+                    print("step == 25")
                     step = 30
             elif step == 30:
                 print("step == 30")
@@ -383,7 +381,11 @@ class MyUi(QWidget, Ui_Form, QObject):
         if stage_print_status == 1:
             self.print_stage_status.setText("启动打印")
         if stage_print_status == 10:
+            self.print_stage_status.setText("正在打印...")
+        if stage_print_status == 30:
             self.print_stage_status.setText("打印完成待取...")
+        if stage_print_status == 50:
+            self.print_stage_status.setText("打印废标...")
         if stage_print_status == 40:
             self.print_stage_status.setText("打印故障")
     def upgrade_recheck_status(self):
@@ -467,7 +469,7 @@ class MyUi(QWidget, Ui_Form, QObject):
                     self.cv_api_1()        # QR Code打印质量
                     print("调用图像cv_api_1")
                     while not (1 == global_maneger.get_global_value('cv_api_1_res')):
-                        print("cv_api_1_res= " + str(global_maneger.get_global_value('cv_api_1_res')))
+                        # print("cv_api_1_res= " + str(global_maneger.get_global_value('cv_api_1_res')))
                         time.sleep(0.5)
                     global_maneger.set_global_value('cv_api_1_res', 0)
 
@@ -694,6 +696,7 @@ class MyUi(QWidget, Ui_Form, QObject):
         global_maneger.set_global_value('work_order', self.lineEdit_workOrder.text())
         try:
             get_res, msg = webapi.web_get()
+            print("webapi.web_get()" + str(get_res) + str(msg))
             if get_res:
                 self.my_log_print("上传工单成功!")
                 # 根据规则打开对应的btw文件
@@ -746,7 +749,7 @@ class MyUi(QWidget, Ui_Form, QObject):
                 global_maneger.set_global_value('mes_push_work_order_done', True)
             else:
                 self.my_log_print("上传工单: "+self.lineEdit_workOrder.text()+" 失败!因为："+str(msg))
-
+            print("webapi.web_get()---done")
             self.bnt_push_work_order.setEnabled(True)
         except Exception as ex:
             print(ex)
@@ -866,6 +869,13 @@ class MyUi(QWidget, Ui_Form, QObject):
     def cv_api_slot(self, n):
         if self.debug_cv.isChecked():
             if n == 1:
+                global_maneger.set_global_value('print_res_1', 0x3159)
+                global_maneger.set_global_value('print_res_2', 0x3259)
+                global_maneger.set_global_value('x', 1)
+                global_maneger.set_global_value('y', 2)
+                global_maneger.set_global_value('cv_api_1_res', 1)
+                return
+
                 text, okPressed = QInputDialog.getText(self, "打印检测结果", "输入4个字段\n1Y/1N 2Y/2N X Y，以空格分隔",
                                                        QLineEdit.Normal, "1Y 2Y 1 2")
                 if okPressed:
@@ -886,9 +896,14 @@ class MyUi(QWidget, Ui_Form, QObject):
                         global_maneger.set_global_value('x', 1)
                         global_maneger.set_global_value('y', 2)
                     global_maneger.set_global_value('cv_api_1_res', 1)
-                self.cv_api_signal.connect(self.cv_api_slot)
+
+
                 return
             if n == 2:
+                global_maneger.set_global_value('recheck_res_1', 0x3159)
+                global_maneger.set_global_value('recheck_res_2', 0x3259)
+                global_maneger.set_global_value('cv_api_2_res', 1)
+                return
                 text, okPressed = QInputDialog.getText(self, "贴标检测结果", "输入2个字段，以空格分隔", QLineEdit.Normal, "1Y 2Y")
                 if okPressed:
                     sections = text.split()
