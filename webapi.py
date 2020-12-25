@@ -18,7 +18,7 @@ def web_login():
             return False, response.text
     except Exception as ex:
         print(ex)
-        return False, ''
+        return False, ex
 # 上传工单和SN号
 def web_post(SN):
     work_order = global_maneger.get_global_value('work_order')

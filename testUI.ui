@@ -602,12 +602,12 @@
        </rect>
       </property>
       <property name="text">
-       <string>准备就绪</string>
+       <string>上位机准备</string>
       </property>
      </widget>
      <widget class="QPushButton" name="bnt_stopAutoRun">
       <property name="enabled">
-       <bool>false</bool>
+       <bool>true</bool>
       </property>
       <property name="geometry">
        <rect>
@@ -619,6 +619,9 @@
       </property>
       <property name="text">
        <string>停止</string>
+      </property>
+      <property name="checkable">
+       <bool>false</bool>
       </property>
      </widget>
      <widget class="QPushButton" name="bnt_connect_SCISmart">
@@ -635,6 +638,32 @@
       </property>
       <property name="text">
        <string>SCISmart</string>
+      </property>
+     </widget>
+     <widget class="QCheckBox" name="debug_cv">
+      <property name="geometry">
+       <rect>
+        <x>250</x>
+        <y>280</y>
+        <width>71</width>
+        <height>16</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>短路CV</string>
+      </property>
+     </widget>
+     <widget class="QCheckBox" name="debug_mes">
+      <property name="geometry">
+       <rect>
+        <x>250</x>
+        <y>310</y>
+        <width>71</width>
+        <height>16</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>短路mes</string>
       </property>
      </widget>
     </widget>
@@ -1010,7 +1039,7 @@
      </rect>
     </property>
    </widget>
-   <widget class="QLineEdit" name="print_recheck_NG_num">
+   <widget class="QLineEdit" name="recheck_NG_num">
     <property name="geometry">
      <rect>
       <x>230</x>

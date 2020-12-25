@@ -27,7 +27,7 @@ class MyUi(QWidget, Ui_Form, QObject):
         self.my_serial = SerialThread()             # 串口
         self.bartender = Bartender()                # Bartender打印引擎
         self.my_file_sys = FileSystem()             # 创建文件系统
-        self.init_configure()                       # 读取配置文件完成某些用户配置
+
         global_maneger.global_maneger_init()        # 初始化全局变量表
         self.check_before_run_start_active = False  # 自动运行前的检查阶段
 
@@ -71,6 +71,7 @@ class MyUi(QWidget, Ui_Form, QObject):
         # 运行前检查子线程定时器
         self.check_before_timer = QTimer()
         self.check_before_timer.timeout.connect(self.check_before_timeout_slot)
+        self.init_configure()  # 读取配置文件完成某些用户配置
     def try_print_slot(self):
         if self.bartender.btFormat:
             nResult = self.bartender.my_print(self.PrintersList.currentText())
@@ -198,6 +199,8 @@ class MyUi(QWidget, Ui_Form, QObject):
         global_maneger.set_global_value('mes_login_done', False)
         global_maneger.set_global_value('mes_push_work_order_done', False)
         self.my_log_print("关闭线程...")
+        self.check_before_run_start_active = False
+        global_maneger.set_global_value('check_before_run_start_res', False)
         global_maneger.set_global_value('Computer_ready', False)
         print('circle_run_stop_slot')
         self.stage_print_active = False
@@ -209,6 +212,8 @@ class MyUi(QWidget, Ui_Form, QObject):
         self.my_log_print("关闭TCP连接...")
         self.cv_tcp_break_connection()
         self.my_log_print("自动运行停止...")
+        self.bnt_startAutoRun.setEnabled(True)
+        self.bnt_startAutoRun.setText('上位机准备')
     def circle_run_ready_slot(self):
         try:
             if global_maneger.get_global_value('Computer_ready') or self.check_before_run_start_active:
@@ -231,7 +236,34 @@ class MyUi(QWidget, Ui_Form, QObject):
     def check_before_run_start_thread_loop(self):
         # 子线程：执行运行前检查，检查无误或者超时返回
         step = 1
-        global_maneger.set_global_value('cv_tcp_connect_done', True)
+
+        if self.debug_cv.isChecked():
+            self.my_log_print("运行前检查：短路cv，跳过检查CV软件连接...")
+            global_maneger.set_global_value('cv_tcp_connect_done', True)
+            time.sleep(0.2)
+        if self.debug_mes.isChecked():
+            self.my_log_print("运行前检查：短路mes，跳过检查mes连接...")
+            global_maneger.set_global_value('mes_login_done', True)
+            global_maneger.set_global_value('mes_push_work_order_done', True)
+            filename = 'FSBB100360B03'
+            try:
+                self.lineEdit_btwFileName.setText(filename)
+                if not self.bartender.set_btwfile_using(filename):
+                    self.my_log_print("打开标签文件: " + str(filename) + " 失败!")
+                    time.sleep(0.2)
+                    self.my_log_print("初始化SN失败!")
+                    return
+                print('FSBB100360B03')
+                # 读取文件的序列化配置和副本配置
+                # data_dict = self.bartender.get_substring_config('num')
+                # self.my_log_print("SN序列化间隔为：" + str(data_dict['SerializeBy']))
+                # self.my_log_print("SN同一序列号使用次数：" + str(data_dict['SerializeEvery']))
+                # self.my_log_print("标签连续打印数量：" + str(data_dict['NumberOfSerializedLabels']))
+                # self.my_log_print("标签打印副本数量：" + str(data_dict['NumberOfSerializedLabels']))
+                self.bnt_modify_btw_file.setEnabled(True)
+                print('self.bnt_modify_btw_file.setEnabled(True)')
+            except Exception as ex:
+                print(ex)
         while self.check_before_run_start_active and (not global_maneger.get_global_value('check_before_run_start_res')):
             if step == 1:
                 print("step == 1")
@@ -239,34 +271,41 @@ class MyUi(QWidget, Ui_Form, QObject):
                 # 1 检查是否连接
                 # 1.2 若未连接mes系统，则自动连接
                 self.my_log_print("运行前检查：检查mes系统连接...")
+                time.sleep(0.2)
                 if not global_maneger.get_global_value('mes_login_done'):
                     self.mes_login_slot()
                 # 1.3 若未连接cv软件，则自动连接
+
                 self.my_log_print("运行前检查：检查CV软件连接...")
                 if not global_maneger.get_global_value('cv_tcp_connect_done'):
                     self.cv_tcp_connect_slot()
                 step = 10
             elif step == 10:
                 print("step == 10")
-                print(global_maneger.get_global_value('serial_connect_done'))
-                print(global_maneger.get_global_value('mes_login_done'))
-                print(global_maneger.get_global_value('cv_tcp_connect_done'))
                 time.sleep(1)
+                print("step == 11")
                 # 10 等待mes连接完成
                 if global_maneger.get_global_value('mes_login_done'):
-                    # 10 若未上传工单，则自动上传
+
+                    print("step == 12")
+
+                    # 若未上传工单，则自动上传
                     self.my_log_print("运行前检查：检查是否已上传工单...")
                     if not global_maneger.get_global_value('mes_push_work_order_done'):
+                        print("step == 13")
                         self.mes_push_work_order_slot()
-                    step = 20
+                print("step == 15")
+                step = 20
             elif step == 20:
                 print("step == 20")
                 time.sleep(1)
                 # 20 等待上传工单完成
                 if global_maneger.get_global_value('mes_push_work_order_done'):
+                    print("step == 2５")
                     step = 30
             elif step == 30:
                 print("step == 30")
+                self.my_log_print("运行前检查：正在连接MES系统与CV软件...")
                 time.sleep(1)
                 # 30 等待所有连接都完成
                 if global_maneger.get_global_value('mes_push_work_order_done') and\
@@ -316,6 +355,9 @@ class MyUi(QWidget, Ui_Form, QObject):
         self.stage_recheck_active = True
         self.stage_recheck_thread = threading.Thread(target=self.stage_recheck_thread_loop, daemon=True)
         self.stage_recheck_thread.start()
+
+        self.bnt_startAutoRun.setEnabled(False)
+        self.bnt_startAutoRun.setText('已就绪')
         self.bnt_stopAutoRun.setEnabled(True)
     def check_before_timeout_slot(self):
         self.check_before_timer.stop()
@@ -335,29 +377,29 @@ class MyUi(QWidget, Ui_Form, QObject):
         self.my_log_print("运行前检查：检查超时，已停止...")
         # 停止准备就绪状态，将标志位初始化
     def upgrade_print_status(self):
-        stage_print_status = global_maneger.get_global_value('status_print')
+        stage_print_status = global_maneger.get_global_value('P_print_cmd')
         if stage_print_status == 0:
             self.print_stage_status.setText("忽略")
-        if stage_print_status == 10:
+        if stage_print_status == 1:
             self.print_stage_status.setText("启动打印")
-        if stage_print_status == 20:
-            self.print_stage_status.setText("正在打印...")
-        if stage_print_status == 30:
+        if stage_print_status == 10:
             self.print_stage_status.setText("打印完成待取...")
-        if stage_print_status == 35:
-            self.print_stage_status.setText("出料完成")
         if stage_print_status == 40:
-            self.print_stage_status.setText("异常")
+            self.print_stage_status.setText("打印故障")
     def upgrade_recheck_status(self):
         stage_recheck_status = global_maneger.get_global_value('status_recheck')
         if stage_recheck_status == 0:
             self.recheck_stage_status.setText("忽略")
+        if stage_recheck_status == 1:
+            self.recheck_stage_status.setText("调用图像cv_api_2")
         if stage_recheck_status == 10:
-            self.recheck_stage_status.setText("启动贴标质量检测")
-        if stage_recheck_status == 20:
             self.recheck_stage_status.setText("正在检测...")
+        if stage_recheck_status == 20:
+            self.recheck_stage_status.setText("待取...")
         if stage_recheck_status == 30:
-            self.recheck_stage_status.setText("检测完成待取...")
+            self.recheck_stage_status.setText("下料完成...")
+        if stage_recheck_status == 35:
+            self.recheck_stage_status.setText("等待新一轮命令")
         if stage_recheck_status == 40:
             self.recheck_stage_status.setText("异常")
     def stage_print_thread_loop(self):
@@ -365,6 +407,7 @@ class MyUi(QWidget, Ui_Form, QObject):
             stage_print_status = global_maneger.get_global_value('P_print_cmd')
             # 1 打印
             if stage_print_status == 1:
+                print("stage_print_status == 1")
                 try:
                     # 1.1 检查btw中的SN与当前上位机维护的current_SN是否一致
                     self.my_log_print("打印前检查SN")
@@ -373,20 +416,26 @@ class MyUi(QWidget, Ui_Form, QObject):
                     btw_current_SN = self.bartender.get_data_dict('num')
                     # 获取全局SN，与btw—SN进行比较检查
                     global_current_SN = global_maneger.get_global_value('current_SN')
+                    # if not self.check_date_of_today():
+                    #     # 检查发现生产时间已超1天
+                    #     pass
                     # 如果btw文件里的SN与上位机维护的SN不一致，则修改btw文件内的SN
                     if btw_current_SN != global_current_SN:
                         print('btw_SN:'+str(btw_current_SN))
                         print('global_SN:'+str(global_current_SN))
                         self.bartender.set_data_dict({'num': global_current_SN})
                     # 1.2 打印，打印出来的SN是用的btw里的current_SN
-                    # res = self.bartender.my_print(self.PrintersList.currentText(), 5000)
-                    res = 0
-                    global_maneger.set_global_value('jobSent', True)
+                    if self.debug_cv.isChecked():
+                        res = 0
+                    else:
+                        res = self.bartender.my_print(self.PrintersList.currentText(), 5000)
+                    global_maneger.set_global_value('JobSent', True)
                     if res == 0:
-                        # 1.3 等待jobSent事件被触发，才说明打印完成
+                        # 1.3 等待JobSent事件被触发，才说明打印完成
                         while not global_maneger.get_global_value('JobSent'):
-                            time.sleep(0.1)
-                        global_maneger.set_global_value('jobSent', False)
+                            print("while not global_maneger.get_global_value('JobSent')")
+                            time.sleep(0.5)
+                        global_maneger.set_global_value('JobSent', False)
                         # 1.4 打印完成，跳转到图像检测
                         global_maneger.set_global_value('P_print_cmd', 10)  # 跳转到图像检测
                         # 1.5 更新计数器
@@ -401,9 +450,11 @@ class MyUi(QWidget, Ui_Form, QObject):
                             self.my_log_print("bartender打印函数返回结果=2，打印故障")
                         global_maneger.set_global_value('P_print_cmd', 40)      # 跳转到打印故障
                 except Exception as ex:
+
                     print(ex)
             # 2 检测打印质量
             elif stage_print_status == 10:
+                print("stage_print_status == 10")
                 try:
                     # 2.1 打印完成后，先计算SN_1与SN_2，用于后续比较
                     SN_1 = global_maneger.get_global_value('current_SN')
@@ -422,30 +473,22 @@ class MyUi(QWidget, Ui_Form, QObject):
 
                     # 2.3 打印检测后，比较SN码是否匹配。
                     self.my_log_print("打印后检测完成，现在更新打印检测成功、失败计数")
-                    if SN_1 == global_maneger.get_global_value('QR_Code_1'):
-                        global_maneger.set_global_value('print_res_1', 0x3159)   # 正确
-                        global_maneger.get_global_value('queue_SN_1').put(SN_1)
-                    elif 'DEBUGING_OK' == global_maneger.get_global_value('QR_Code_1'):
-                        global_maneger.set_global_value('print_res_1', 0x3159)  # 正确
-                        global_maneger.get_global_value('queue_SN_1').put(SN_1)
-                    elif 'DEBUGING_NG' == global_maneger.get_global_value('QR_Code_1'):
-                        global_maneger.set_global_value('print_res_1', 0x314E)  # 错误
-                        global_maneger.get_global_value('queue_SN_1').put('NG')  # 错误时SN码用'NG'
+                    if self.debug_cv.isChecked():
+                        #  不往队列里推SN码
+                        pass
                     else:
-                        global_maneger.set_global_value('print_res_1', 0x314E)   # 错误为2
-                        global_maneger.get_global_value('queue_SN_1').put('NG') # 错误时SN码用'NG'
-                    if SN_2 == global_maneger.get_global_value('QR_Code_2'):
-                        global_maneger.set_global_value('print_res_2', 0x3259)
-                        global_maneger.get_global_value('queue_SN_2').put(SN_2)
-                    elif 'DEBUGING_OK' == global_maneger.get_global_value('QR_Code_2'):
-                        global_maneger.set_global_value('print_res_2', 0x3259)
-                        global_maneger.get_global_value('queue_SN_2').put(SN_2)
-                    elif 'DEBUGING_NG' == global_maneger.get_global_value('QR_Code_2'):
-                        global_maneger.set_global_value('print_res_2', 0x324E)
-                        global_maneger.get_global_value('queue_SN_2').put('NG')
-                    else:
-                        global_maneger.set_global_value('print_res_2', 0x324E)
-                        global_maneger.get_global_value('queue_SN_2').put('NG')  # 错误时SN码用'NG'
+                        if SN_1 == global_maneger.get_global_value('QR_Code_1'):
+                            global_maneger.set_global_value('print_res_1', 0x3159)   # 正确
+                            global_maneger.get_global_value('queue_SN_1').put(SN_1)
+                        else:
+                            global_maneger.set_global_value('print_res_1', 0x314E)   # 错误
+                            global_maneger.get_global_value('queue_SN_1').put('NG') # 错误时SN码用'NG'
+                        if SN_2 == global_maneger.get_global_value('QR_Code_2'):
+                            global_maneger.set_global_value('print_res_2', 0x3259)
+                            global_maneger.get_global_value('queue_SN_2').put(SN_2)
+                        else:
+                            global_maneger.set_global_value('print_res_2', 0x324E)
+                            global_maneger.get_global_value('queue_SN_2').put('NG')  # 错误时SN码用'NG'
                     # 2.4 更新成功、失败计数，然后显示在UI
                     if 0x314E == global_maneger.get_global_value('print_res_1') or 0x324E == global_maneger.get_global_value('print_res_2'):
                         # 只要有一个打印结果不好的，就都不要了
@@ -462,11 +505,15 @@ class MyUi(QWidget, Ui_Form, QObject):
                         global_maneger.set_global_value('print_check_OK_num', num + 2)
                         self.print_check_OK_num.setText(str(global_maneger.get_global_value('print_check_OK_num')))
                     # 2.5 调用串口发送api，把检测结果发送给下位机
-                    self.my_serial.serial_api_sender_stage(reg_num=1, addr=C_B2, value=global_maneger.get_global_value('print_res_1'))  # 等待串口发送
-                    self.my_serial.serial_api_sender_stage(reg_num=1, addr=C_B3, value=global_maneger.get_global_value('print_res_2'))  # 等待串口发送
-                    self.my_serial.serial_api_sender_stage(reg_num=1, addr=C_B4, value=int(global_maneger.get_global_value('x')))  # 等待串口发送
-                    self.my_serial.serial_api_sender_stage(reg_num=1, addr=C_B5, value=int(global_maneger.get_global_value('y')))  # 等待串口发送
-                    self.my_serial.serial_api_sender_stage(reg_num=1, addr=C_B1, value=0x4c46)  # 等待串口发送
+                    self.my_serial.serial_api_sender_stage(reg_num=1, addr=C_B1, value=global_maneger.get_global_value(
+                        'print_res_1'))  # 等待串口发送
+                    self.my_serial.serial_api_sender_stage(reg_num=1, addr=C_B2, value=global_maneger.get_global_value(
+                        'print_res_2'))  # 等待串口发送
+                    self.my_serial.serial_api_sender_stage(reg_num=1, addr=C_B3,
+                                                           value=int(global_maneger.get_global_value('x')))  # 等待串口发送
+                    self.my_serial.serial_api_sender_stage(reg_num=1, addr=C_B4,
+                                                           value=int(global_maneger.get_global_value('y')))  # 等待串口发送
+                    self.my_serial.serial_api_sender_stage(reg_num=1, addr=C_B5, value=0x4c46)  # 等待串口发送
                     global_maneger.set_global_value('P_print_cmd', 30)
                     print("2.5 调用串口发送api，把检测结果发送给下位机")
                 except Exception as ex:
@@ -492,11 +539,11 @@ class MyUi(QWidget, Ui_Form, QObject):
                     time.sleep(0.5)
                 global_maneger.set_global_value('cv_api_2_res', 0)
                 print("2.1 检测完成，结果发送给下位机")
-                self.my_serial.serial_api_sender_stage(reg_num=1, addr=C_C2,
+                self.my_serial.serial_api_sender_stage(reg_num=1, addr=C_C1,
                                                        value=global_maneger.get_global_value('recheck_res_1'))  # 等待串口发送
-                self.my_serial.serial_api_sender_stage(reg_num=1, addr=C_C3,
+                self.my_serial.serial_api_sender_stage(reg_num=1, addr=C_C2,
                                                        value=global_maneger.get_global_value('recheck_res_2'))  # 等待串口发送
-                self.my_serial.serial_api_sender_stage(reg_num=1, addr=C_C1, value=0x4446)  # 等待串口发送
+                self.my_serial.serial_api_sender_stage(reg_num=1, addr=C_C3, value=0x4446)  # 等待串口发送
                 global_maneger.set_global_value('P_recheck_cmd', 20)
             elif stage_recheck_status == 20:
                 # 3.检测完成，待取。等待下位机的消息上升沿把20修改成30
@@ -505,54 +552,59 @@ class MyUi(QWidget, Ui_Form, QObject):
             elif stage_recheck_status == 30:
                 print("30 status_recheck==30，下料完成")
                 self.my_log_print("下料完成，现在更新下料成功、失败计数")
+                if self.debug_cv.isChecked():
+                    # 再生成SN码，因为debug_cv时没有队列可以取
+                    time.time()
+                    SN_1 = str(time.time())
+                    SN_2 = str(time.time() + 1)
+                else:
                 # 4.工单与SN上传mes服务器
-                # if global_maneger.get_global_value('queue_SN_1').empty():
-                #     self.my_log_print("发生异常：SN_1队列空！")
-                #     global_maneger.set_global_value('P_recheck_cmd', 40)
-                # SN_1 = global_maneger.get_global_value('queue_SN_1').get()
-                # if global_maneger.get_global_value('queue_SN_2').empty():
-                #     self.my_log_print("发生异常：SN_2队列空！")
-                #     global_maneger.set_global_value('P_recheck_cmd', 40)
-                # SN_2 = global_maneger.get_global_value('queue_SN_2').get()
-
-                # 4.2--单步调试用到的SN码，跳过队列
-                time.time()
-                SN_1 = str(time.time())
-                SN_2 = str(time.time()+1)
-                if 0x3159 == global_maneger.get_global_value('product_1'):
-                    # 成品计数器+1
-                    num = global_maneger.get_global_value('recheck_OK_num')
-                    global_maneger.set_global_value('recheck_OK_num', num + 1)
-                    self.recheck_OK_num.setText(str(num + 1))
-                    # 工单目前生产量+1
-                    num = global_maneger.get_global_value('SN_QTY')
-                    global_maneger.set_global_value('SN_QTY', num + 1)
-                    self.lineEdit_SN_QTY.setText(str(global_maneger.get_global_value('SN_QTY')))
-                    post_res, msg = webapi.web_post(SN_1)
-                    if not post_res:
-                        self.my_log_print("SN_1: "+str(SN_1)+", 上传mes系统失败！因为：" + str(msg))
-                elif 0x314E == global_maneger.get_global_value('product_1'):
-                    num = global_maneger.get_global_value('recheck_NG_num')
-                    global_maneger.set_global_value('recheck_NG_num', num + 1)
-                    # self.recheck_NG_num.setText(str(global_maneger.get_global_value('recheck_NG_num')))
-                    self.my_log_print("SN_1成品检测 NG +1！")
-                if 0x3259 == global_maneger.get_global_value('product_2'):
-                    # 成品计数器+1
-                    num = global_maneger.get_global_value('recheck_OK_num')
-                    global_maneger.set_global_value('recheck_OK_num', num + 1)
-                    self.recheck_OK_num.setText(str(global_maneger.get_global_value('recheck_OK_num')))
-                    # 工单目前生产量+1
-                    num = global_maneger.get_global_value('SN_QTY')
-                    global_maneger.set_global_value('SN_QTY', num + 1)
-                    self.lineEdit_SN_QTY.setText(str(global_maneger.get_global_value('SN_QTY')))
-                    post_res, msg = webapi.web_post(SN_2)
-                    if not post_res:
-                        self.my_log_print("SN_2: "+str(SN_2)+", 上传mes系统失败！因为：" + str(msg))
-                elif 0x324E == global_maneger.get_global_value('product_2'):
-                    num = global_maneger.get_global_value('recheck_NG_num')
-                    global_maneger.set_global_value('recheck_NG_num', num + 1)
-                    # self.recheck_NG_num.setText(str(global_maneger.get_global_value('recheck_NG_num')))
-                    self.my_log_print("SN_2成品检测 NG +1！")
+                    if global_maneger.get_global_value('queue_SN_1').empty():
+                        self.my_log_print("发生异常：SN_1队列空！")
+                        global_maneger.set_global_value('P_recheck_cmd', 40)
+                    SN_1 = global_maneger.get_global_value('queue_SN_1').get()
+                    if global_maneger.get_global_value('queue_SN_2').empty():
+                        self.my_log_print("发生异常：SN_2队列空！")
+                        global_maneger.set_global_value('P_recheck_cmd', 40)
+                    SN_2 = global_maneger.get_global_value('queue_SN_2').get()
+                if self.debug_mes.isChecked():
+                    # 不上传到mes
+                    pass
+                else:
+                    if 0x3159 == global_maneger.get_global_value('product_1'):
+                        # 成品计数器+1
+                        num = global_maneger.get_global_value('recheck_OK_num')
+                        global_maneger.set_global_value('recheck_OK_num', num + 1)
+                        self.recheck_OK_num.setText(str(num + 1))
+                        # 工单目前生产量+1
+                        num = global_maneger.get_global_value('SN_QTY')
+                        global_maneger.set_global_value('SN_QTY', num + 1)
+                        self.lineEdit_SN_QTY.setText(str(global_maneger.get_global_value('SN_QTY')))
+                        post_res, msg = webapi.web_post(SN_1)
+                        if not post_res:
+                            self.my_log_print("SN_1: "+str(SN_1)+", 上传mes系统失败！因为：" + str(msg))
+                    elif 0x314E == global_maneger.get_global_value('product_1'):
+                        num = global_maneger.get_global_value('recheck_NG_num')
+                        global_maneger.set_global_value('recheck_NG_num', num + 1)
+                        self.recheck_NG_num.setText(str(global_maneger.get_global_value('recheck_NG_num')))
+                        self.my_log_print("SN_1成品检测 NG +1！")
+                    if 0x3259 == global_maneger.get_global_value('product_2'):
+                        # 成品计数器+1
+                        num = global_maneger.get_global_value('recheck_OK_num')
+                        global_maneger.set_global_value('recheck_OK_num', num + 1)
+                        self.recheck_OK_num.setText(str(global_maneger.get_global_value('recheck_OK_num')))
+                        # 工单目前生产量+1
+                        num = global_maneger.get_global_value('SN_QTY')
+                        global_maneger.set_global_value('SN_QTY', num + 1)
+                        self.lineEdit_SN_QTY.setText(str(global_maneger.get_global_value('SN_QTY')))
+                        post_res, msg = webapi.web_post(SN_2)
+                        if not post_res:
+                            self.my_log_print("SN_2: "+str(SN_2)+", 上传mes系统失败！因为：" + str(msg))
+                    elif 0x324E == global_maneger.get_global_value('product_2'):
+                        num = global_maneger.get_global_value('recheck_NG_num')
+                        global_maneger.set_global_value('recheck_NG_num', num + 1)
+                        self.recheck_NG_num.setText(str(global_maneger.get_global_value('recheck_NG_num')))
+                        self.my_log_print("SN_2成品检测 NG +1！")
                 # 5.工单与SN上传完成，等待新一轮命令
                 self.my_serial.serial_api_sender_stage(reg_num=1, addr=C_D1, value=0x5047)# 等待串口发送
                 global_maneger.set_global_value('P_recheck_cmd', 35)
@@ -587,6 +639,10 @@ class MyUi(QWidget, Ui_Form, QObject):
                     self.lineEdit_password.setText(conf_dict["password"])
                 if conf_dict["work_order"]:
                     self.lineEdit_workOrder.setText(conf_dict["work_order"])
+                if conf_dict["serial_port"]:
+                    self.SerialList.setCurrentText(conf_dict["serial_port"])
+                if conf_dict["serial_baudrate"]:
+                    self.BaudrateList.setCurrentText(conf_dict["serial_baudrate"])
             except Exception as ex:
                 print(ex)
     # 软件关闭前，保存配置文件
@@ -596,6 +652,9 @@ class MyUi(QWidget, Ui_Form, QObject):
             conf_dict["employee_id"] = self.lineEdit_employeeID.text()
             conf_dict["password"] = self.lineEdit_password.text()
             conf_dict["work_order"] = self.lineEdit_workOrder.text()
+            conf_dict["serial_port"] = self.SerialList.currentText()
+            conf_dict["serial_baudrate"] = self.BaudrateList.currentText()
+
             if self.my_file_sys.if_diff(conf_dict):
                 reply = QMessageBox.question(self, '保存配置', "对config文件是否要保存修改？",
                                              QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
@@ -650,6 +709,7 @@ class MyUi(QWidget, Ui_Form, QObject):
                 y = str(ywd[0] % 100).zfill(2)
                 w = str(ywd[1]).zfill(2)
                 d = str(ywd[2])
+                global_maneger.set_global_value('today', d)
                 self.my_log_print("今天是 " + str(y) + " 年 " + str(w) + " 周 " + str(d) + " 日！")
                 time.sleep(0.1)
                 if not original_SN:  # 特殊情况1：mes没有给出初始SN，需要根据规则生成一个初始SN
@@ -682,7 +742,7 @@ class MyUi(QWidget, Ui_Form, QObject):
                 self.my_log_print("标签连续打印数量：" + str(data_dict['NumberOfSerializedLabels']))
                 self.my_log_print("标签打印副本数量：" + str(data_dict['NumberOfSerializedLabels']))
                 self.bnt_modify_btw_file.setEnabled(True)
-                self.bnt_startAutoRun.setEnabled(True)
+
                 global_maneger.set_global_value('mes_push_work_order_done', True)
             else:
                 self.my_log_print("上传工单: "+self.lineEdit_workOrder.text()+" 失败!因为："+str(msg))
@@ -717,8 +777,8 @@ class MyUi(QWidget, Ui_Form, QObject):
         try:
             self.cv1_tcp_socket.close()
             self.cv2_tcp_socket.close()
-            # self.bnt_active_cv1.setDisenabled(True)
-            # self.bnt_active_cv2.setDisenabled(True)
+            self.bnt_active_cv1.setDisabled(True)
+            self.bnt_active_cv2.setDisabled(True)
         except Exception as ex:
             print(ex)
     def cv1_tcp_thread_loop(self):
@@ -796,99 +856,92 @@ class MyUi(QWidget, Ui_Form, QObject):
         return res
     def reset_print_stage_slot(self):
         global_maneger.set_global_value('status_print', 0)
-        if global_maneger.get_global_value('serial_connect_done'):
-            self.my_serial.serial_api_sender_stage(reg_num=1, addr=1, value=0)
-            self.stage_print_active = True
-            self.stage_print_thread = threading.Thread(target=self.stage_print_thread_loop, daemon=True)
-            self.stage_print_thread.start()
-        else:
-            QMessageBox.warning(self, "下位机无连接", "请打开串口！", QMessageBox.Ok)
-            return
+        print("status_print = 0")
+        return
     def reset_recheck_stage_slot(self):
         global_maneger.set_global_value('status_recheck', 0)
-        if global_maneger.get_global_value('serial_connect_done'):
-            self.my_serial.serial_api_sender_stage(reg_num=1, addr=2, value=0)
-            self.stage_recheck_active = True
-            self.stage_recheck_thread = threading.Thread(target=self.stage_recheck_thread_loop, daemon=True)
-            self.stage_recheck_thread.start()
-        else:
-            QMessageBox.warning(self, "下位机无连接", "请打开串口！", QMessageBox.Ok)
-            return
+        print("status_recheck = 0")
+        return
     # 向CV软件发送拍照检测信号
     def cv_api_slot(self, n):
-        self.cv_api_signal.disconnect(self.cv_api_slot)
-        '''
-        if n == 1:
-            data = b'1'
-            # 通过TCP连接发送
-            self.cv1_tcp_socket.send(data)
-            self.cv_api_signal.connect(self.cv_api_slot)
-            return
-        if n == 2:
-            data = b'2'
-            # 通过TCP连接发送
-            self.cv2_tcp_socket.send(data)
-            self.cv_api_signal.connect(self.cv_api_slot)
-            return
-        '''
-        if n == 1:
-            text, okPressed = QInputDialog.getText(self, "打印检测结果", "输入4个字段\n1Y/1N 2Y/2N X Y，以空格分隔", QLineEdit.Normal, "1Y 2Y 1 2")
-            if okPressed:
-                sections = text.split()
-                if len(sections) == 4:
-                    global_maneger.set_global_value('QR_Code_1', 'DEBUGING_NG')
-                    global_maneger.set_global_value('QR_Code_2', 'DEBUGING_NG')
-                    if sections[0] == '1Y':
-                        global_maneger.set_global_value('QR_Code_1', 'DEBUGING_OK')
-                    if sections[1] == '2Y':
-                        global_maneger.set_global_value('QR_Code_2', 'DEBUGING_OK')
-                    global_maneger.set_global_value('x', int(sections[2]))
-                    global_maneger.set_global_value('y', int(sections[3]))
-                else:
-                    QMessageBox.warning(self, "警告", "输入格式不符，已按 “1Y 2Y 1 2” 输入处理！", QMessageBox.Ok)
-                    global_maneger.set_global_value('print_res_1', 0x3159)
-                    global_maneger.set_global_value('print_res_2', 0x3259)
-                    global_maneger.set_global_value('x', 1)
-                    global_maneger.set_global_value('y', 2)
-                global_maneger.set_global_value('cv_api_1_res', 1)
-            self.cv_api_signal.connect(self.cv_api_slot)
-            return
-        if n == 2:
-            text, okPressed = QInputDialog.getText(self, "贴标检测结果", "输入2个字段，以空格分隔", QLineEdit.Normal, "1Y 2Y")
-            if okPressed:
-                sections = text.split()
-                if len(sections) == 2:
-                    global_maneger.set_global_value('recheck_res_1', 0x314E)
-                    global_maneger.set_global_value('recheck_res_2', 0x324E)
-                    if sections[0] == '1Y':
+        if self.debug_cv.isChecked():
+            if n == 1:
+                text, okPressed = QInputDialog.getText(self, "打印检测结果", "输入4个字段\n1Y/1N 2Y/2N X Y，以空格分隔",
+                                                       QLineEdit.Normal, "1Y 2Y 1 2")
+                if okPressed:
+                    sections = text.split()
+                    if len(sections) == 4:
+                        global_maneger.set_global_value('print_res_1', 0x314E)
+                        global_maneger.set_global_value('print_res_2', 0x324E)
+                        if sections[0] == '1Y':
+                            global_maneger.set_global_value('print_res_1', 0x3159)
+                        if sections[1] == '2Y':
+                            global_maneger.set_global_value('print_res_2', 0x3259)
+                        global_maneger.set_global_value('x', int(sections[2]))
+                        global_maneger.set_global_value('y', int(sections[3]))
+                    else:
+                        QMessageBox.warning(self, "警告", "输入格式不符，已按 “1Y 2Y 1 2” 输入处理！", QMessageBox.Ok)
+                        global_maneger.set_global_value('print_res_1', 0x3159)
+                        global_maneger.set_global_value('print_res_2', 0x3259)
+                        global_maneger.set_global_value('x', 1)
+                        global_maneger.set_global_value('y', 2)
+                    global_maneger.set_global_value('cv_api_1_res', 1)
+                self.cv_api_signal.connect(self.cv_api_slot)
+                return
+            if n == 2:
+                text, okPressed = QInputDialog.getText(self, "贴标检测结果", "输入2个字段，以空格分隔", QLineEdit.Normal, "1Y 2Y")
+                if okPressed:
+                    sections = text.split()
+                    if len(sections) == 2:
+                        global_maneger.set_global_value('recheck_res_1', 0x314E)
+                        global_maneger.set_global_value('recheck_res_2', 0x324E)
+                        if sections[0] == '1Y':
+                            global_maneger.set_global_value('recheck_res_1', 0x3159)
+                        if sections[1] == '2Y':
+                            global_maneger.set_global_value('recheck_res_2', 0x3259)
+                    else:
+                        QMessageBox.warning(self, "警告", "输入格式不符，已按 “1Y 1Y” 输入处理！", QMessageBox.Ok)
                         global_maneger.set_global_value('recheck_res_1', 0x3159)
-                    if sections[1] == '2Y':
                         global_maneger.set_global_value('recheck_res_2', 0x3259)
-                else:
-                    QMessageBox.warning(self, "警告", "输入格式不符，已按 “1Y 1Y” 输入处理！", QMessageBox.Ok)
-                    global_maneger.set_global_value('recheck_res_1', 0x3159)
-                    global_maneger.set_global_value('recheck_res_2', 0x3259)
-                global_maneger.set_global_value('cv_api_2_res', 1)
-            self.cv_api_signal.connect(self.cv_api_slot)
-            return
+                    global_maneger.set_global_value('cv_api_2_res', 1)
+                return
+        else:
+            if n == 1:
+                data = b'1'
+                # 通过TCP连接发送
+                self.cv1_tcp_socket.send(data)
+                self.cv_api_signal.connect(self.cv_api_slot)
+                return
+            if n == 2:
+                data = b'2'
+                # 通过TCP连接发送
+                self.cv2_tcp_socket.send(data)
+                self.cv_api_signal.connect(self.cv_api_slot)
+                return
     def cv_api_1(self):
         self.cv_api_signal.emit(1)
     def cv_api_2(self):
         self.cv_api_signal.emit(2)
     def cv1_test(self):
-        try:
-            data = b'1'
-            if self.cv1_tcp_socket:
-                self.cv1_tcp_socket.send(data)
-        except Exception as ex:
-            print(ex)
+        if self.debug_cv.isChecked():
+            pass
+        else:
+            try:
+                data = b'1'
+                if self.cv1_tcp_socket:
+                    self.cv1_tcp_socket.send(data)
+            except Exception as ex:
+                print(ex)
     def cv2_test(self):
-        try:
-            data = b'2'
-            if self.cv2_tcp_socket:
-                self.cv2_tcp_socket.send(data)
-        except Exception as ex:
-            print(ex)
+        if self.debug_cv.isChecked():
+            pass
+        else:
+            try:
+                data = b'2'
+                if self.cv2_tcp_socket:
+                    self.cv2_tcp_socket.send(data)
+            except Exception as ex:
+                print(ex)
     def warning_box_slot(self, msg):
         QMessageBox.warning(self, "警告", msg, QMessageBox.Ok)
     def check_date_of_today(self):

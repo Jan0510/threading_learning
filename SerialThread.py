@@ -8,27 +8,46 @@ import global_maneger
 import time
 import serial
 from PyQt5.QtCore import pyqtSignal, QTimer, QObject
+# # 开机时
+# P_A1 = 101  # R?=0x523f
+# C_A1 = 109  # RD=0x5244
+# # 打印时
+# P_B1 = 110  # LS=0x4c53
+# C_B1 = 111  # LF=0x4c46
+# C_B2 = 112
+# C_B3 = 113
+# C_B4 = 114
+# C_B5 = 115
+# # 下料前检查
+# P_C1 = 100
+# C_C1 = 99
+# C_C2 = 102
+# C_C3 = 103
+# # 下料完成
+# P_D1 = 104
+# P_D2 = 105
+# P_D3 = 106  # 5045
+# C_D1 = 107  # 5047
 # 开机时
-P_A1 = 101
-C_A1 = 109
+P_A1 = 160  # R?=0x523f
+C_A1 = 161  # RD=0x5244
 # 打印时
-P_B1 = 110
-C_B1 = 111
-C_B2 = 112
-C_B3 = 113
-C_B4 = 114
-C_B5 = 115
+P_B1 = 159  # LS=0x4c53
+C_B1 = 163
+C_B2 = 164
+C_B3 = 165
+C_B4 = 166
+C_B5 = 162  # LF=0x4c46
 # 下料前检查
-P_C1 = 100
-C_C1 = 99
-C_C2 = 102
-C_C3 = 103
+P_C1 = 158
+C_C1 = 169
+C_C2 = 170
+C_C3 = 168  # 0x4446
 # 下料完成
-P_D1 = 104
-P_D2 = 105
-P_D3 = 106  # 5045
-C_D1 = 107  # 5047
-
+P_D1 = 157
+P_D2 = 156
+P_D3 = 155  # 0x5045
+C_D1 = 167  # 0x5047
 class SerialThread(QObject):        # 需要继承QObject才可以使用QTimer
     # 在初始化函数__init__ 之前加入的就是自定义信号的申明,这个声明只能在初始化函数外面
     dataReadoutSignal = pyqtSignal(int) # 输出信号，用于告知连接状态
@@ -70,6 +89,8 @@ class SerialThread(QObject):        # 需要继承QObject才可以使用QTimer
         return self.com_dict
     # 在主线程中，开启子线程作为串口接收、发送
     def start(self, port, baudrate=9600, bytesize=8, stopbits=1, parity='N', timeout=0):
+        self.cnt_03_send = 0
+        self.cnt_03_receieve = 0
         self.modbus_reg = [0]*200            # 索引+1对应于modbus寄存器地址
         self.modbus_reg_last_value = [0]*200 # 保存旧值，用于计算上升沿
         self.my_serial.port = port       # 串口号
@@ -88,7 +109,7 @@ class SerialThread(QObject):        # 需要继承QObject才可以使用QTimer
                 self.alive = True
                 self.my_serial.open()
                 # 开poll定时器
-                self.poll_timer.start(500)  # 启动发送轮询定时器
+                self.poll_timer.start(1000)  # 启动发送轮询定时器
                 # 开if_alive定时器
                 self.if_alive_timer.start(3000)
                 # 开resend定时器
@@ -140,7 +161,7 @@ class SerialThread(QObject):        # 需要继承QObject才可以使用QTimer
         except Exception as ex:
             print(ex)
             return False
-    def modbus_send03cmd(self, start_addr=90, num=30):
+    def modbus_send03cmd(self, start_addr=150, num=30):
         send_buf = bytearray(8)#返回一个长度为 8 的初始化数组
         send_buf[0] = 0x01    #地址
         send_buf[1] = 0x03    #功能码
@@ -180,7 +201,7 @@ class SerialThread(QObject):        # 需要继承QObject才可以使用QTimer
         send_buf[8+num*2-2] = crc16 // 256
         send_buf[8+num*2-1] = crc16 % 256
         return send_buf
-    def modbus_Receive_Translate(self, data, length, addr = 90):
+    def modbus_Receive_Translate(self, data, length, start_addr = 150):
         # 只当执行到modbus_Receive_Translate函数时才会创建，并作为实例变量一直存在
         data_crc = data[length-2]*256+data[length-1]
         if data[0] == 0x01 and data_crc == getcrc16(data, length-2):
@@ -188,9 +209,12 @@ class SerialThread(QObject):        # 需要继承QObject才可以使用QTimer
                 self.modbus_03cmd_wait = False
                 reg_num = data[2]       # 字节数目
                 for i in range(0, reg_num//2):  # 把数据填入modbus_reg队列
-                    self.modbus_reg[addr+i] = data[3+i*2]*256 + data[4+i*2]
+                    self.modbus_reg[start_addr+i] = data[3+i*2]*256 + data[4+i*2]
                 # 把modbus_reg数组转移到全局变量中
                 self.move_modbus_reg_to_global_value()
+                self.cnt_03_receieve += 1
+                print("cnt_03_send = " + str(self.cnt_03_send))
+                print("cnt_03_receieve = " + str(self.cnt_03_receieve))
             elif data[1] == 0x06:
                 # 写命令的应答只要CRC通过就行
                 self.modbus_resend_timer.stop()  # 关闭定时器
@@ -235,6 +259,7 @@ class SerialThread(QObject):        # 需要继承QObject才可以使用QTimer
                         print("发送功能码异常")
                         return
                 else:
+                    self.cnt_03_send += 1
                     self.modbus_send03cmd()
                     # print("发送03报文")
                 # sender_threading = threading.Thread(target=self.modbus_send03cmd, daemon=True)
@@ -260,6 +285,8 @@ class SerialThread(QObject):        # 需要继承QObject才可以使用QTimer
                     # 2个子线程步骤号初始化+变量初始化+队列缓冲区初始化
                     global_maneger.set_global_value('P_print_cmd', 0)
                     global_maneger.set_global_value('P_recheck_cmd', 0)
+                    global_maneger.set_global_value('queue_SN_1', Queue())
+                    global_maneger.set_global_value('queue_SN_2', Queue())
                     print('发送RD')
                     self.serial_api_sender_stage(1, C_A1, 0x5244)
                 else:

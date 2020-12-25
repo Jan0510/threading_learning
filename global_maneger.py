@@ -13,9 +13,9 @@ def global_maneger_init():  # 初始化
     global _global_dict
     # 全局变量表
     # 1 与下位机通信相关变量
-    _global_dict['status_print'] = 0
-    _global_dict['status_recheck'] = 0
-    _global_dict['cmd_mode'] = 0
+    _global_dict['Computer_ready'] = False
+    _global_dict['P_print_cmd'] = 0
+    _global_dict['P_recheck_cmd'] = 0
     _global_dict['x_1'] = 0
     _global_dict['y_1'] = 0
     _global_dict['print_res_1'] = 0
